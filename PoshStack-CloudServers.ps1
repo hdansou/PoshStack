@@ -13,6 +13,62 @@ Description
 
 ############################################################################################>
 
+#CloudServersProvider.AttachServerVolume
+function Add-CloudServerVolume{
+    Param(
+        [Parameter (Position=0, Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -account parameter"),
+        [Parameter (Position=1, Mandatory=$True)][string] $ServerId = $(throw "Server ID is required"),
+        [Parameter (Position=2, Mandatory=$True)][string] $VolumeId = $(throw "Volume ID is required"),
+        [Parameter (Position=3, Mandatory=$False][string] $StorageDevice,
+        [Parameter (Position=4, Mandatory=$False)][string] $RegionOverride
+        )
+}
+#ChangeAdministratorPassword
+#ConfirmServerResize
+#CreateImage
+#CreateServer
+#CreateVirtualInterface
+#DeleteImage
+#DeleteImageMetadataItem
+#DeleteServer
+#DeleteVirtualInterface
+#DetachServerVolume
+#GetDetails
+#GetFlavor
+#GetImage
+#GetImageMetadataItem
+#GetServerMetadataItem
+#GetServerVolumeDetails
+#ListAddresses
+#ListAddressesByNetwork
+#ListFlavors
+#ListFlavorsWithDetails
+#ListImageMetadata
+#ListImages
+#ListImagesWithDetails
+#ListServerMetadata
+#ListServers
+#ListServerWithDetails
+#ListServerVolumes
+#ListVirtualInterfaces
+#RebootServer
+#RebuildServer
+#ResizeServer
+#RevertServerResize
+#SetImageMetadata
+#SetImageMetadataItem
+#UnRescueServer
+#UpdateImageMetadata
+#UpdateServer
+#UpdateServerMetadata
+#WaitForImageActive
+#WaitForImageState
+#WaitForServerActive
+#WaitForServerDeleted
+#WaitForServerState
+
+#ListFlavors
+#ListFlavorsWithDetails
 function Get-CloudServerFlavors {
     Param(
         [Parameter (Position=0, Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -account parameter"),
@@ -20,7 +76,8 @@ function Get-CloudServerFlavors {
         [Parameter (Position=2, Mandatory=$False)][int]   $MinDiskInGB,
         [Parameter (Position=3, Mandatory=$False)][int]   $MinRamInMB,
         [Parameter (Position=4, Mandatory=$False)][string]$MarkerId,
-        [Parameter (Position=5, Mandatory=$False)][int]   $Limit
+        [Parameter (Position=5, Mandatory=$False)][int]   $Limit,
+        [Parameter (Position=6, Mandatory=$False)][switch]$Details
     )
 
     if ($RegionOverride){
@@ -120,6 +177,8 @@ function Get-CloudServerFlavors {
 #>
 }
 
+#ListImages
+#ListImagesWithDetails
 function Get-CloudServerImages {
     
     Param(
@@ -131,7 +190,8 @@ function Get-CloudServerImages {
         [Parameter (Position=5, Mandatory=$False)][datetime] $ChangesSince,
         [Parameter (Position=6, Mandatory=$False)][string] $MarkerId,
         [Parameter (Position=7, Mandatory=$False)][int] $Limit,
-        [Parameter (Position=8, Mandatory=$False)][net.openstack.Core.Domain.ImageType]$ImageType
+        [Parameter (Position=8, Mandatory=$False)][net.openstack.Core.Domain.ImageType]$ImageType,
+        [Parameter (Position=9, Mandatory=$False)][switch] $Details
     )
 
     if ($RegionOverride){
@@ -243,6 +303,8 @@ function Get-CloudServerImages {
 #>
 }
 
+#ListServers
+#ListServersWithDetails
 function Get-CloudServers{
 
     [CmdletBinding()]
@@ -256,7 +318,8 @@ function Get-CloudServers{
         [Parameter (Position=5, Mandatory=$False)][object]$ServerState,
         [Parameter (Position=6, Mandatory=$False)][string]$MarkerId,
         [Parameter (Position=7, Mandatory=$False)][int]   $Limit,
-        [Parameter (Position=8, Mandatory=$False)][object]$ChangesSince
+        [Parameter (Position=8, Mandatory=$False)][object]$ChangesSince,
+        [Parameter (Position=9, Mandatory=$False)][switch]$Details
     )
 
     Get-CloudAccount($Account)
@@ -373,6 +436,7 @@ function Get-CloudServers{
 #>
 }
 
+#GetDetails
 function Get-CloudServerDetails {
 
     Param(
@@ -466,6 +530,7 @@ function Get-CloudServerDetails {
 #>
 }
 
+#ListServerVolumes
 function Get-CloudServerVolumes {
     
         Param(
@@ -550,6 +615,7 @@ function Get-CloudServerVolumes {
 
 }
 
+#CreateServer
 function New-CloudServer {
     Param(
         [Parameter(Position=0,Mandatory=$true)][string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
@@ -599,4 +665,38 @@ function New-CloudServer {
             $newServer | Format-Table Id, AdminPassword
 
 
+}
+
+#DeleteServer
+function Remove-CloudServer{
+    Param(
+        [Parameter(Position=0,Mandatory=$true)][string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
+        [Parameter(Position=1,Mandatory=$true)][string]$ServerId = $(throw "Please specify server ID with -ServerId parameter")
+        )
+}
+
+#RebootServer
+function Restart-CloudServer{
+    Param(
+        [Parameter(Position=0,Mandatory=$true)][string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
+        [Parameter(Position=1,Mandatory=$true)][string]$ServerId = $(throw "Please specify server ID with -ServerId parameter")
+        )
+}
+
+#RebuildServer
+function Initialize-CloudServer{
+    Param(
+        [Parameter(Position=0,Mandatory=$true)][string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
+        [Parameter(Position=1,Mandatory=$true)][string]$ServerId = $(throw "Please specify server ID with -ServerId parameter"),
+        [Parameter(Position=2,Mandatory=$true)][string]$ServerName = $(throw "Please specify server name with -ServerName parameter"),
+        [Parameter(Position=3,Mandatory=$true)][string]$ImageId = $(throw "Please specify server name with -ServerName parameter"),
+        [Parameter(Position=4,Mandatory=$true)][string]$FlavorId = $(throw "Please specify server name with -ServerName parameter"),
+        [Parameter(Position=5,Mandatory=$true)][string]$AdminPassword = $(throw "Please specify server name with -ServerName parameter"),
+        [Parameter(Position=6,Mandatory=$False)][string]$AccessIPv4,
+        [Parameter(Position=7,Mandatory=$False)][string]$AccessIPv6,
+        [Parameter(Position=8,Mandatory=$False)][string]$Metadata,
+        [Parameter(Position=9,Mandatory=$False)][string]$DiskConfig,
+        [Parameter(Position=10,Mandatory=$False)][string]$Personality,
+        [Parameter(Position=11,Mandatory=$False)][string]$RegionOverride
+        )
 }
