@@ -19,7 +19,7 @@ function Add-CloudServerVolume{
         [Parameter (Position=0, Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -account parameter"),
         [Parameter (Position=1, Mandatory=$True)][string] $ServerId = $(throw "Server ID is required"),
         [Parameter (Position=2, Mandatory=$True)][string] $VolumeId = $(throw "Volume ID is required"),
-        [Parameter (Position=3, Mandatory=$False][string] $StorageDevice,
+        [Parameter (Position=3, Mandatory=$False)][string] $StorageDevice,
         [Parameter (Position=4, Mandatory=$False)][string] $RegionOverride
         )
 }
@@ -671,16 +671,74 @@ function New-CloudServer {
 function Remove-CloudServer{
     Param(
         [Parameter(Position=0,Mandatory=$true)][string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
-        [Parameter(Position=1,Mandatory=$true)][string]$ServerId = $(throw "Please specify server ID with -ServerId parameter")
+        [Parameter(Position=1,Mandatory=$true)][string]$ServerId = $(throw "Please specify server ID with -ServerId parameter"),
+        [Parameter(Position=2,Mandatory=$false)][string]$RegionOverride
         )
+
+        # Get Identity Provider
+        $cloudId    = New-Object net.openstack.Core.Domain.CloudIdentity
+        $cloudId.Username = $Credentials.CloudUsername
+        $cloudId.APIKey   = $Credentials.CloudAPIKey
+        $cip        = New-Object net.openstack.Providers.Rackspace.CloudIdentityProvider($cloudId)
+
+        # Get Cloud Servers Provider
+        $cloudServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
+
+
+        # Use Region code associated with Account, or was an override provided?
+        if ($RegionOverride)
+        {
+            $Region = $Global:RegionOverride
+        } else {
+            $Region = $Credentials.Region
+        }
+
+
+        # DEBUGGING             
+        Write-Debug -Message "ServerID: $ServerID"
+        Write-Debug -Message "Region..: $Region"
+
+            
+        # Delete the Server
+        return $cloudServersProvider.DeleteServer($ServerId, $Region, $cloudId)
 }
 
 #RebootServer
 function Restart-CloudServer{
     Param(
         [Parameter(Position=0,Mandatory=$true)][string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
-        [Parameter(Position=1,Mandatory=$true)][string]$ServerId = $(throw "Please specify server ID with -ServerId parameter")
+        [Parameter(Position=1,Mandatory=$true)][string]$ServerId = $(throw "Please specify server ID with -ServerId parameter"),
+        [Parameter(Position=2,Mandatory=$true)][net.openstack.Core.Domain.RebootType]$RebootType,
+        [Parameter(Position=3,Mandatory=$False)][string]$RegionOverride
         )
+
+            # Get Identity Provider
+            $cloudId    = New-Object net.openstack.Core.Domain.CloudIdentity
+            $cloudId.Username = $Credentials.CloudUsername
+            $cloudId.APIKey   = $Credentials.CloudAPIKey
+            $cip        = New-Object net.openstack.Providers.Rackspace.CloudIdentityProvider($cloudId)
+
+            # Get Cloud Servers Provider
+            $cloudServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
+
+
+            # Use Region code associated with Account, or was an override provided?
+            if ($RegionOverride)
+            {
+                $Region = $Global:RegionOverride
+            } else {
+                $Region = $Credentials.Region
+            }
+
+
+            # DEBUGGING             
+            Write-Debug -Message "ServerID..: $ServerID"
+            Write-Debug -Message "RebootType: $RebootType"
+            Write-Debug -Message "Region....: $Region"
+
+            
+            # Reboot the Server
+            return $cloudServersProvider.RebootServer($ServerId, $RebootType, $Region, $cloudId)
 }
 
 #RebuildServer
@@ -689,14 +747,52 @@ function Initialize-CloudServer{
         [Parameter(Position=0,Mandatory=$true)][string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
         [Parameter(Position=1,Mandatory=$true)][string]$ServerId = $(throw "Please specify server ID with -ServerId parameter"),
         [Parameter(Position=2,Mandatory=$true)][string]$ServerName = $(throw "Please specify server name with -ServerName parameter"),
-        [Parameter(Position=3,Mandatory=$true)][string]$ImageId = $(throw "Please specify server name with -ServerName parameter"),
-        [Parameter(Position=4,Mandatory=$true)][string]$FlavorId = $(throw "Please specify server name with -ServerName parameter"),
-        [Parameter(Position=5,Mandatory=$true)][string]$AdminPassword = $(throw "Please specify server name with -ServerName parameter"),
+        [Parameter(Position=3,Mandatory=$true)][string]$ImageId = $(throw "Please specify image id with -ImageId parameter"),
+        [Parameter(Position=4,Mandatory=$true)][string]$FlavorId = $(throw "Please specify flavor id with -FlavorId parameter"),
+        [Parameter(Position=5,Mandatory=$true)][string]$AdminPassword = $(throw "Please specify administrator password with -AdminPassword parameter"),
         [Parameter(Position=6,Mandatory=$False)][string]$AccessIPv4,
         [Parameter(Position=7,Mandatory=$False)][string]$AccessIPv6,
         [Parameter(Position=8,Mandatory=$False)][string]$Metadata,
         [Parameter(Position=9,Mandatory=$False)][string]$DiskConfig,
         [Parameter(Position=10,Mandatory=$False)][string]$Personality,
         [Parameter(Position=11,Mandatory=$False)][string]$RegionOverride
+        )
+        # Get Identity Provider
+        $cloudId    = New-Object net.openstack.Core.Domain.CloudIdentity
+        $cloudId.Username = $Credentials.CloudUsername
+        $cloudId.APIKey   = $Credentials.CloudAPIKey
+        $cip        = New-Object net.openstack.Providers.Rackspace.CloudIdentityProvider($cloudId)
+
+        # Get Cloud Servers Provider
+        $cloudServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
+
+
+        # Use Region code associated with Account, or was an override provided?
+        if ($RegionOverride)
+        {
+            $Region = $Global:RegionOverride
+        } else {
+            $Region = $Credentials.Region
+        }
+
+
+        # DEBUGGING             
+        Write-Debug -Message "ServerID: $ServerID"
+        Write-Debug -Message "Region..: $Region"
+
+            
+        # Delete the Server
+        return $cloudServersProvider.RebuildServer($ServerId, $ServerName, $ImageId, $FlavorId, $AdminPassword, $AccessIPv4, $AccessIPv6, $Metadata, $DiskConfig, $Personality, $Region, $cloudId)
+}
+
+#ResizeServer
+function Resize-CloudServer{
+    Param(
+        [Parameter(Position=0,Mandatory=$true)][string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
+        [Parameter(Position=1,Mandatory=$true)][string]$ServerId = $(throw "Please specify server ID with -ServerId parameter"),
+        [Parameter(Position=2,Mandatory=$true)][string]$ServerName = $(throw "Please specify server name with -ServerName parameter"),
+        [Parameter(Position=3,Mandatory=$true)][string]$FlavorId = $(throw "Please specify server name with -ServerName parameter"),
+        [Parameter(Position=4,Mandatory=$False)][string]$DiskConfig,
+        [Parameter(Position=5,Mandatory=$False)][string]$RegionOverride
         )
 }
