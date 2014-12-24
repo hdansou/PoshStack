@@ -10,7 +10,7 @@ Authors
         
 Description
 -----------
-**TOD**
+**TODO**
 
 
 ############################################################################################>
@@ -27,6 +27,20 @@ $Global:PoshStackConfigFile = $env:USERPROFILE + "\Documents\WindowsPowerShell\M
 #
 ############################################################################################
 
+function Get-CloudIdentityProvider{
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$True)][string] $Username = $(throw "Please specify required Username with -Username parameter"),
+        [Parameter(Mandatory=$True)][string] $APIKey = $(throw "Please specify required API Key with -APIKey parameter")
+    )
+
+    # Get Identity Provider
+    $cloudId    = New-Object net.openstack.Core.Domain.CloudIdentity
+    $cloudId.Username = $Username
+    $cloudId.APIKey   = $APIKey
+    $cip = New-Object net.openstack.Providers.Rackspace.CloudIdentityProvider($cloudId)
+    Return $cloudId
+}
 function Get-CloudAccount {
     <#
     Read $Global:PoshStackConfigFile then populate global account variables 

@@ -73,11 +73,11 @@ function Get-CloudServerFlavors {
     Param(
         [Parameter (Position=0, Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -account parameter"),
         [Parameter (Position=1, Mandatory=$False)][string]$RegionOverride,
-        [Parameter (Position=2, Mandatory=$False)][int]   $MinDiskInGB,
-        [Parameter (Position=3, Mandatory=$False)][int]   $MinRamInMB,
-        [Parameter (Position=4, Mandatory=$False)][string]$MarkerId,
-        [Parameter (Position=5, Mandatory=$False)][int]   $Limit,
-        [Parameter (Position=6, Mandatory=$False)][switch]$Details
+        [Parameter (Mandatory=$False)][int]    $MinDiskInGB,
+        [Parameter (Mandatory=$False)][int]    $MinRamInMB,
+        [Parameter (Mandatory=$False)][string] $MarkerId,
+        [Parameter (Mandatory=$False)][int]   $Limit,
+        [Parameter (Mandatory=$False)][switch]$Details
     )
 
     if ($RegionOverride){
@@ -87,10 +87,7 @@ function Get-CloudServerFlavors {
     try {
 
         # Get Identity Provider
-        $cloudId = New-Object net.openstack.Core.Domain.CloudIdentity
-        $cloudId.Username = $Credentials.CloudUsername
-        $cloudId.APIKey   = $Credentials.CloudAPIKey
-        $cip     = New-Object net.openstack.Providers.Rackspace.CloudIdentityProvider($cloudId)
+        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
 
         # Get Cloud Servers Provider
         $cloudServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
@@ -104,6 +101,7 @@ function Get-CloudServerFlavors {
 
         # DEBUGGING       
         Write-Debug -Message "Get-CloudServerFlavors"     
+        Write-Debug -Message "Details.......: $Details"
         Write-Debug -Message "Account.......: $Account" 
         Write-Debug -Message "RegionOverride: $RegionOverride" 
         Write-Debug -Message "MinDiskInGB...: $MinDiskInGB" 
@@ -120,7 +118,11 @@ function Get-CloudServerFlavors {
 
 
         # Get the list of Flavors
-        $FlavorList = $cloudServersProvider.ListFlavorsWithDetails($MinDiskInGB, $MinRamInMB, $MarkerId, $Limit, $Region, $cloudId)
+        if ($Details) {
+            $FlavorList = $cloudServersProvider.ListFlavorsWithDetails($MinDiskInGB, $MinRamInMB, $MarkerId, $Limit, $Region, $cloudId)
+        } else {
+            $FlavorList = $cloudServersProvider.ListFlavors($MinDiskInGB, $MinRamInMB, $MarkerId, $Limit, $Region, $cloudId)
+        }
 
 
         # Handling empty response indicating that no Flavors exist in the queried data center
@@ -160,6 +162,9 @@ function Get-CloudServerFlavors {
  .PARAMETER Limit
  This parameter allows you to limit the number of results.
 
+ .PARAMETER Details
+ This switch allows you to include detailed information about each Flavor in your list.
+
  .EXAMPLE
  PS C:\Users\Administrator> Get-CloudServerFlavors -Account prod
  This example shows how to get a list of all available Flavors in the account prod
@@ -182,16 +187,16 @@ function Get-CloudServerFlavors {
 function Get-CloudServerImages {
     
     Param(
-        [Parameter (Position=0, Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -account parameter"),
-        [Parameter (Position=1, Mandatory=$False)][string]$RegionOverride,
-        [Parameter (Position=2, Mandatory=$False)][string]$Server,
-        [Parameter (Position=3, Mandatory=$False)][string]$ImageName,
-        [Parameter (Position=4, Mandatory=$False)][net.openstack.Core.Domain.ImageState] $ImageStatus,
-        [Parameter (Position=5, Mandatory=$False)][datetime] $ChangesSince,
-        [Parameter (Position=6, Mandatory=$False)][string] $MarkerId,
-        [Parameter (Position=7, Mandatory=$False)][int] $Limit,
-        [Parameter (Position=8, Mandatory=$False)][net.openstack.Core.Domain.ImageType]$ImageType,
-        [Parameter (Position=9, Mandatory=$False)][switch] $Details
+        [Parameter (Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -account parameter"),
+        [Parameter (Mandatory=$False)][string]$RegionOverride,
+        [Parameter (Mandatory=$False)][string]$Server,
+        [Parameter (Mandatory=$False)][string]$ImageName,
+        [Parameter (Mandatory=$False)][net.openstack.Core.Domain.ImageState] $ImageStatus,
+        [Parameter (Mandatory=$False)][datetime] $ChangesSince,
+        [Parameter (Mandatory=$False)][string] $MarkerId,
+        [Parameter (Mandatory=$False)][int] $Limit,
+        [Parameter (Mandatory=$False)][net.openstack.Core.Domain.ImageType]$ImageType,
+        [Parameter (Mandatory=$False)][switch] $Details
     )
 
     if ($RegionOverride){
@@ -200,10 +205,7 @@ function Get-CloudServerImages {
 
     try {
             # Get Identity Provider
-            $cloudId    = New-Object net.openstack.Core.Domain.CloudIdentity
-            $cloudId.Username = $Credentials.CloudUsername
-            $cloudId.APIKey   = $Credentials.CloudAPIKey
-            $cip        = New-Object net.openstack.Providers.Rackspace.CloudIdentityProvider($cloudId)
+            $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
 
             # Get Cloud Servers Provider
             $cloudServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
@@ -221,6 +223,7 @@ function Get-CloudServerImages {
 
             # DEBUGGING             
             Write-Debug -Message "Get-CloudServerImages"
+            Write-Debug -Message "Details..........: $Details"
             Write-Debug -Message "Server...........: $Server"
             Write-Debug -Message "ImageName........: $ImageName"
             Write-Debug -Message "ImageStatus......: $ImageStatus"
@@ -237,7 +240,11 @@ function Get-CloudServerImages {
             $Region = $Region
             
 
-            $ImageList = $cloudServersProvider.ListImagesWithDetails($Server, $ImageName, $ImageStatus, $ChangesSince, $MarkerId, $Limit, $ImageType, $Region, $cloudId)
+            if ($Details) {
+                $ImageList = $cloudServersProvider.ListImagesWithDetails($Server, $ImageName, $ImageStatus, $ChangesSince, $MarkerId, $Limit, $ImageType, $Region, $cloudId)
+            } else {
+                $ImageList = $cloudServersProvider.ListImages($Server, $ImageName, $ImageStatus, $ChangesSince, $MarkerId, $Limit, $ImageType, $Region, $cloudId)
+            }
 
 
             # Handling empty response indicating that no servers exist in the queried data center
@@ -266,37 +273,40 @@ function Get-CloudServerImages {
  This parameter will temporarily override the default region set in PoshStack configuration file. 
 
  .PARAMETER Server
- This parameter limits the image list by the server name. 
+ This parameter limits the Image list by the server name. 
 
  .PARAMETER ImageName
- This parameter limits the image list by the image name. 
+ This parameter limits the Image list by the Image name. 
 
  .PARAMETER ImageStatus
- This parameter limits the image list by the image status. 
+ This parameter limits the Image list by the Image status. 
 
  .PARAMETER ChangesSince
- This parameter limits the image list to only those created or modified since this date. 
+ This parameter limits the Image list to only those created or modified since this date. 
 
  .PARAMETER MarkerId
  This parameter allows paging. 
 
  .PARAMETER Limit
- This parameter limits the number of images listed. 
+ This parameter limits the number of Images listed. 
 
  .PARAMETER ImageType
- This parameter limits the image list by the image type (Base or Snapshot). 
+ This parameter limits the Image list by the Image Type (Base or Snapshot). 
+
+  .PARAMETER Details
+ This switch allows you to include detailed information about each Image in your list.
 
  .EXAMPLE
  PS C:\Users\Administrator> Get-CloudServerImages -Account prod
- This example shows how to get a list of all available images in the account prod
+ This example shows how to get a list of all available Images in the account prod
 
  .EXAMPLE
  PS C:\Users\Administrator> Get-CloudServerImages cloudus -RegionOverride DFW
- This example shows how to get a list of all available images for cloudus account in DFW region
+ This example shows how to get a list of all available Images for cloudus account in DFW region
 
  .EXAMPLE
  PS C:\Users\Administrator> Get-CloudServerImages cloudus -ImageType ([net.openstack.Core.Domain.ImageType]::Base) 
- This example shows how to get a list of the base images
+ This example shows how to get a list of the base Images
 
  .LINK
  http://docs.rackspace.com/servers/api/v2/cs-devguide/content/Images-d1e4427.html
@@ -310,16 +320,16 @@ function Get-CloudServers{
     [CmdletBinding()]
 
     Param(
-        [Parameter (Position=0, Mandatory=$True)] [string]$Account,
-        [Parameter (Position=1, Mandatory=$False)][string]$RegionOverride,
-        [Parameter (Position=2, Mandatory=$False)][string]$ImageId,
-        [Parameter (Position=3, Mandatory=$False)][string]$FlavorId,
-        [Parameter (Position=4, Mandatory=$False)][string]$ServerName,
-        [Parameter (Position=5, Mandatory=$False)][object]$ServerState,
-        [Parameter (Position=6, Mandatory=$False)][string]$MarkerId,
-        [Parameter (Position=7, Mandatory=$False)][int]   $Limit,
-        [Parameter (Position=8, Mandatory=$False)][object]$ChangesSince,
-        [Parameter (Position=9, Mandatory=$False)][switch]$Details
+        [Parameter (Mandatory=$True)] [string]$Account,
+        [Parameter (Mandatory=$False)][string]$RegionOverride,
+        [Parameter (Mandatory=$False)][string]$ImageId,
+        [Parameter (Mandatory=$False)][string]$FlavorId,
+        [Parameter (Mandatory=$False)][string]$ServerName,
+        [Parameter (Mandatory=$False)][object]$ServerState,
+        [Parameter (Mandatory=$False)][string]$MarkerId,
+        [Parameter (Mandatory=$False)][int]   $Limit,
+        [Parameter (Mandatory=$False)][object]$ChangesSince,
+        [Parameter (Mandatory=$False)][switch]$Details
     )
 
     Get-CloudAccount($Account)
@@ -330,10 +340,7 @@ function Get-CloudServers{
 
     try {
             # Get Identity Provider
-            $cloudId    = New-Object net.openstack.Core.Domain.CloudIdentity
-            $cloudId.Username = $Credentials.CloudUsername
-            $cloudId.APIKey   = $Credentials.CloudAPIKey
-            $cip        = New-Object net.openstack.Providers.Rackspace.CloudIdentityProvider($cloudId)
+            $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
 
             # Get Cloud Servers Provider
             $cloudServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
@@ -356,7 +363,8 @@ function Get-CloudServers{
 
 
             # DEBUGGING        
-            Write-Debug -Message "Get-CloudServers"     
+            Write-Debug -Message "Get-CloudServers"  
+            Write-Debug -Message "Details.....: $Details"   
             Write-Debug -Message "ImageId.....: $ImageId"
             Write-Debug -Message "FlavorId....: $FlavorId"
             Write-Debug -Message "ServerName..: $ServerName"
@@ -368,7 +376,11 @@ function Get-CloudServers{
 
 
             # Get the list of servers
-            $ServerList = $cloudServersProvider.ListServersWithDetails($ImageId, $FlavorId, $ServerName, $ServerState, $MarkerId, $Limit, $ChangesSince, $Region, $cloudId)
+            if ($Details) {
+                $ServerList = $cloudServersProvider.ListServersWithDetails($ImageId, $FlavorId, $ServerName, $ServerState, $MarkerId, $Limit, $ChangesSince, $Region, $cloudId)
+            } else {
+                $ServerList = $cloudServersProvider.ListServers($ImageId, $FlavorId, $ServerName, $ServerState, $MarkerId, $Limit, $ChangesSince, $Region, $cloudId)
+            }
 
 
             # Handling empty response indicating that no servers exist in the queried data center
@@ -422,6 +434,8 @@ function Get-CloudServers{
  .PARAMETER ChangesSince
  This parameter will limit the results to only those servers who have been changed since this date and time.
 
+ .PARAMETER Details
+ This switch allows you to include detailed information about each Server in your list.
 
  .EXAMPLE
  PS C:\Users\Administrator> Get-CloudServers -account cloud
@@ -440,43 +454,39 @@ function Get-CloudServers{
 function Get-CloudServerDetails {
 
     Param(
-        [Parameter(Position=0, Mandatory=$true)] [string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
-        [Parameter(Position=1, Mandatory=$true)] [string]$ServerID = $(throw "Please specify required server ID with -ServerID parameter"),
-        [Parameter(Position=2, Mandatory=$False)][string]$RegionOverride
+        [Parameter(Mandatory=$true)] [string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
+        [Parameter(Mandatory=$true)] [string]$ServerID = $(throw "Please specify required server ID with -ServerID parameter"),
+        [Parameter(Mandatory=$False)][string]$RegionOverride
     )
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
-            # Get Identity Provider
-            $cloudId    = New-Object net.openstack.Core.Domain.CloudIdentity
-            $cloudId.Username = $Credentials.CloudUsername
-            $cloudId.APIKey   = $Credentials.CloudAPIKey
-            $cip        = New-Object net.openstack.Providers.Rackspace.CloudIdentityProvider($cloudId)
+    # Get Identity Provider
+    $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
 
-            # Get Cloud Servers Provider
-            $cloudServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
+    # Get Cloud Servers Provider
+    $cloudServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
 
 
-            # Use Region code associated with Account, or was an override provided?
-            if ($RegionOverride)
-            {
-                $Region = $Global:RegionOverride
-            } else {
-                $Region = $Credentials.Region
-            }
+    # Use Region code associated with Account, or was an override provided?
+    if ($RegionOverride) {
+        $Region = $Global:RegionOverride
+    } else {
+        $Region = $Credentials.Region
+    }
 
 
-            # DEBUGGING        
-            Write-Debug -Message "Get-CloudServerDetails"     
-            Write-Debug -Message "Account.: $Account"
-            Write-Debug -Message "ServerID: $ServerID"
-            Write-Debug -Message "Region..: $Region"
+    # DEBUGGING        
+    Write-Debug -Message "Get-CloudServerDetails"     
+    Write-Debug -Message "Account.: $Account"
+    Write-Debug -Message "ServerID: $ServerID"
+    Write-Debug -Message "Region..: $Region"
 
 
-            # Get the Server details
-            return $cloudServersProvider.GetDetails($ServerID, $Region, $cloudId)
+    # Get the Server details
+    return $cloudServersProvider.GetDetails($ServerID, $Region, $cloudId)
 
 <#
  .SYNOPSIS
@@ -534,46 +544,42 @@ function Get-CloudServerDetails {
 function Get-CloudServerVolumes {
     
         Param(
-        [Parameter (Position=0, Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -Account parameter"),
-        [Parameter (Position=1, Mandatory=$True)][string] $ServerID = $(throw "Please specify required server ID with -ServerID parameter"),
-        [Parameter (Position=2, Mandatory=$False)][string]$RegionOverride
+        [Parameter (Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -Account parameter"),
+        [Parameter (Mandatory=$True)][string] $ServerID = $(throw "Please specify required server ID with -ServerID parameter"),
+        [Parameter (Mandatory=$False)][string]$RegionOverride
     )
 
-        if ($RegionOverride){
+    if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
-            # Get Identity Provider
-            $cloudId    = New-Object net.openstack.Core.Domain.CloudIdentity
-            $cloudId.Username = $Credentials.CloudUsername
-            $cloudId.APIKey   = $Credentials.CloudAPIKey
-            $cip        = New-Object net.openstack.Providers.Rackspace.CloudIdentityProvider($cloudId)
+    # Get Identity Provider
+    $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
 
-            # Get Cloud Servers Provider
-            $cloudServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
+    # Get Cloud Servers Provider
+    $cloudServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
 
 
-            # Use Region code associated with Account, or was an override provided?
-            if ($RegionOverride)
-            {
-                $Region = $Global:RegionOverride
-            } else {
-                $Region = $Credentials.Region
-            }
+    # Use Region code associated with Account, or was an override provided?
+    if ($RegionOverride) {
+        $Region = $Global:RegionOverride
+    } else {
+        $Region = $Credentials.Region
+    }
 
 
-            # DEBUGGING             
-            Write-Debug -Message "Account.: $Account"
-            Write-Debug -Message "ServerID: $ServerID"
-            Write-Debug -Message "Region..: $Region"
+    # DEBUGGING             
+    Write-Debug -Message "Account.: $Account"
+    Write-Debug -Message "ServerID: $ServerID"
+    Write-Debug -Message "Region..: $Region"
 
 
-            # Get the list of servers
-            return $cloudServersProvider.ListServerVolumes($ServerID, $Region, $cloudId)
+    # Get the list of servers
+    return $cloudServersProvider.ListServerVolumes($ServerID, $Region, $cloudId)
 
 <#
  .SYNOPSIS
- The Get-CloudServerVolumes cmdlet will pull down a list of detailed information for a specific Rackspace Cloud Server.
+ The Get-CloudServerVolumes cmdlet will pull down a list of detailed information for a specific Cloud Server.
 
  .DESCRIPTION
  This command is executed against one given cloud server ID, which in turn will return explicit details about that server without any other server data.
@@ -618,68 +624,109 @@ function Get-CloudServerVolumes {
 #CreateServer
 function New-CloudServer {
     Param(
-        [Parameter(Position=0,Mandatory=$true)][string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
-        [Parameter(Position=1,Mandatory=$true)][string]$ServerName = $(throw "Please specify server name with -ServerName parameter"),
-        [Parameter(Position=2,Mandatory=$true)][string]$ImageID = $(throw "Please specify the image ID with -ImageID parameter"),
-        [Parameter(Position=3,Mandatory=$true)][string]$FlavorID = $(throw "Please specify server flavor with -FlavorID parameter"),
-        [Parameter(Position=4,Mandatory=$false)][object]$DiskConfig,
-        [Parameter(Position=5,Mandatory=$false)][object]$Metadata,
-        [Parameter(Position=6,Mandatory=$false)][switch]$AttachToServiceNetwork,
-        [Parameter(Position=7,Mandatory=$false)][switch]$AttachToPublicNetwork,
-        [Parameter(Position=8,Mandatory=$false)][array]$Networks,
-        [Parameter(Position=9,Mandatory=$false)][ValidateCount(0,5)][string[]]$PersonalityFile,
-        [Parameter(Position=10,Mandatory=$false)][switch]$Isolated,
-        [Parameter(Position=11,Mandatory=$false)][switch]$Deploy,
-        [Parameter(Position=12,Mandatory=$false)][string]$RegionOverride
+        [Parameter(Mandatory=$true)][string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
+        [Parameter(Mandatory=$true)][string]$ServerName = $(throw "Please specify server name with -ServerName parameter"),
+        [Parameter(Mandatory=$true)][string]$ImageID = $(throw "Please specify the image ID with -ImageID parameter"),
+        [Parameter(Mandatory=$true)][string]$FlavorID = $(throw "Please specify server flavor with -FlavorID parameter"),
+        [Parameter(Mandatory=$false)][net.openstack.Core.Domain.DiskConfiguration]$DiskConfig,
+        [Parameter(Mandatory=$false)][net.openstack.Core.Domain.Metadata]$Metadata,
+        [Parameter(Mandatory=$false)][bool]$AttachToServiceNetwork,
+        [Parameter(Mandatory=$false)][bool]$AttachToPublicNetwork,
+        [Parameter(Mandatory=$false)][array]$Networks,
+        [Parameter(Mandatory=$false)][ValidateCount(0,5)][string[]]$PersonalityFile,
+        [Parameter(Mandatory=$false)][bool]$Isolated,
+        [Parameter(Mandatory=$false)][bool]$Deploy,
+        [Parameter(Mandatory=$false)][string]$RegionOverride
     )
-            if ($RegionOverride){
+            
+    if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
-            # Get Identity Provider
-            $cloudId    = New-Object net.openstack.Core.Domain.CloudIdentity
-            $cloudId.Username = $Credentials.CloudUsername
-            $cloudId.APIKey   = $Credentials.CloudAPIKey
-            $cip        = New-Object net.openstack.Providers.Rackspace.CloudIdentityProvider($cloudId)
+    $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
 
-            # Get Cloud Servers Provider
-            $cloudServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
+    # Get Cloud Servers Provider
+    $cloudServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
 
 
-            # Use Region code associated with Account, or was an override provided?
-            if ($RegionOverride)
-            {
-                $Region = $Global:RegionOverride
-            } else {
-                $Region = $Credentials.Region
-            }
+    # Use Region code associated with Account, or was an override provided?
+    if ($RegionOverride) {
+        $Region = $Global:RegionOverride
+    } else {
+        $Region = $Credentials.Region
+    }
 
 
-            # DEBUGGING             
-            Write-Debug -Message "ServerID: $ServerID"
-            Write-Debug -Message "Region..: $Region"
+    # DEBUGGING             
+    Write-Debug -Message "ServerID: $ServerID"
+    Write-Debug -Message "Region..: $Region"
 
             
-            # Create a Server
-            $newServer = $cloudServersProvider.CreateServer($ServerName, $ImageID, $FlavorID, $null, $null, $null, $true, $true, $null, $Region, $cloudId)
-            $newServer | Format-Table Id, AdminPassword
+    # Create a Server
+    $newServer = $cloudServersProvider.CreateServer($ServerName, $ImageID, $FlavorID, $DiskConfig, $Metadata, $null, $AttachToServiceNetwork, $AttachToPublicNetwork, $Networks, $Region, $cloudId)
+    $newServer | Format-Table Id, AdminPassword
 
+<#
+ .SYNOPSIS
+ The New-CloudServer cmdlet will create a Virtual Machine.
+
+ .DESCRIPTION
+ This command creates a Virtual Machine. The Server ID and Administrator Password (AdminPassword) are returned.
+
+ .PARAMETER Account
+ Use this parameter to indicate which account you would like to execute this request against. 
+ Valid choices are defined in PoshStack configuration file.
+
+ .PARAMETER ServerName
+ .PARAMETER ImageID
+ .PARAMETER FlavorID
+ .PARAMETER DiskConfig
+ .PARAMETER Metadata
+ .PARAMETER AttachToServiceNetwork
+ .PARAMETER AttachToPublicNetwork
+ .PARAMETER Networks
+ .PARAMETER PersonalityFile
+ .PARAMETER Isolated
+ .PARAMETER Deploy
+ .PARAMETER RegionOverride
+
+ .EXAMPLE
+ PS C:\Users\Administrator> Get-CloudServerDetails -ServerID abc123ef-9876-abcd-1234-123456abcdef -Account prod
+ This example shows how to get explicit data about one cloud server from the account Prod
+
+ .EXAMPLE
+ PS C:\Users\Administrator> Get-CloudServerDetails -ServerID abc123ef-9876-abcd-1234-123456abcdef -Account Dev 
+ 
+ PS C:\Users\mitch.robins> Get-CloudServerDetails -ServerID abc123ef-9876-abcd-1234-123456abcdef -Account Prod
+
+    Server Status:  ACTIVE 
+    Server Name:  AA-Mongo 
+    Server ID:  abc123ef-9876-abcd-1234-123456abcdef
+    Server Created:  2013-03-11T16:09:15Z 
+    Server Last Updated:  2013-03-11T16:14:27Z 
+    Server Image ID:  8a3a9f96-b997-46fd-b7a8-a9e740796ffd 
+    Server Flavor ID:  4 
+    Server IPv4:  100.100.100.100
+    Server IPv6:  2001:::::::15d0 
+    Server Build Progress:  100 
+
+ .LINK
+ http://docs.rackspace.com/servers/api/v2/cs-devguide/content/Get_Server_Details-d1e2623.html
+
+#>
 
 }
 
 #DeleteServer
 function Remove-CloudServer{
     Param(
-        [Parameter(Position=0,Mandatory=$true)][string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
-        [Parameter(Position=1,Mandatory=$true)][string]$ServerId = $(throw "Please specify server ID with -ServerId parameter"),
-        [Parameter(Position=2,Mandatory=$false)][string]$RegionOverride
+        [Parameter(Mandatory=$true)][string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
+        [Parameter(Mandatory=$true)][string]$ServerId = $(throw "Please specify server ID with -ServerId parameter"),
+        [Parameter(Mandatory=$false)][string]$RegionOverride
         )
 
         # Get Identity Provider
-        $cloudId    = New-Object net.openstack.Core.Domain.CloudIdentity
-        $cloudId.Username = $Credentials.CloudUsername
-        $cloudId.APIKey   = $Credentials.CloudAPIKey
-        $cip        = New-Object net.openstack.Providers.Rackspace.CloudIdentityProvider($cloudId)
+        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
 
         # Get Cloud Servers Provider
         $cloudServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
@@ -706,17 +753,14 @@ function Remove-CloudServer{
 #RebootServer
 function Restart-CloudServer{
     Param(
-        [Parameter(Position=0,Mandatory=$true)][string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
-        [Parameter(Position=1,Mandatory=$true)][string]$ServerId = $(throw "Please specify server ID with -ServerId parameter"),
-        [Parameter(Position=2,Mandatory=$true)][net.openstack.Core.Domain.RebootType]$RebootType,
-        [Parameter(Position=3,Mandatory=$False)][string]$RegionOverride
+        [Parameter(Mandatory=$true)][string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
+        [Parameter(Mandatory=$true)][string]$ServerId = $(throw "Please specify server ID with -ServerId parameter"),
+        [Parameter(Mandatory=$true)][net.openstack.Core.Domain.RebootType]$RebootType,
+        [Parameter(Mandatory=$False)][string]$RegionOverride
         )
 
             # Get Identity Provider
-            $cloudId    = New-Object net.openstack.Core.Domain.CloudIdentity
-            $cloudId.Username = $Credentials.CloudUsername
-            $cloudId.APIKey   = $Credentials.CloudAPIKey
-            $cip        = New-Object net.openstack.Providers.Rackspace.CloudIdentityProvider($cloudId)
+    $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
 
             # Get Cloud Servers Provider
             $cloudServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
@@ -744,55 +788,53 @@ function Restart-CloudServer{
 #RebuildServer
 function Initialize-CloudServer{
     Param(
-        [Parameter(Position=0,Mandatory=$true)][string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
-        [Parameter(Position=1,Mandatory=$true)][string]$ServerId = $(throw "Please specify server ID with -ServerId parameter"),
-        [Parameter(Position=2,Mandatory=$true)][string]$ServerName = $(throw "Please specify server name with -ServerName parameter"),
-        [Parameter(Position=3,Mandatory=$true)][string]$ImageId = $(throw "Please specify image id with -ImageId parameter"),
-        [Parameter(Position=4,Mandatory=$true)][string]$FlavorId = $(throw "Please specify flavor id with -FlavorId parameter"),
-        [Parameter(Position=5,Mandatory=$true)][string]$AdminPassword = $(throw "Please specify administrator password with -AdminPassword parameter"),
-        [Parameter(Position=6,Mandatory=$False)][string]$AccessIPv4,
-        [Parameter(Position=7,Mandatory=$False)][string]$AccessIPv6,
-        [Parameter(Position=8,Mandatory=$False)][string]$Metadata,
-        [Parameter(Position=9,Mandatory=$False)][string]$DiskConfig,
-        [Parameter(Position=10,Mandatory=$False)][string]$Personality,
-        [Parameter(Position=11,Mandatory=$False)][string]$RegionOverride
+        [Parameter(Mandatory=$true)][string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
+        [Parameter(Mandatory=$true)][string]$ServerId = $(throw "Please specify server ID with -ServerId parameter"),
+        [Parameter(Mandatory=$true)][string]$ServerName = $(throw "Please specify server name with -ServerName parameter"),
+        [Parameter(Mandatory=$true)][string]$ImageId = $(throw "Please specify image id with -ImageId parameter"),
+        [Parameter(Mandatory=$true)][string]$FlavorId = $(throw "Please specify flavor id with -FlavorId parameter"),
+        [Parameter(Mandatory=$true)][string]$AdminPassword = $(throw "Please specify administrator password with -AdminPassword parameter"),
+        [Parameter(Mandatory=$False)][string]$AccessIPv4,
+        [Parameter(Mandatory=$False)][string]$AccessIPv6,
+        [Parameter(Mandatory=$False)][string]$Metadata,
+        [Parameter(Mandatory=$False)][string]$DiskConfig,
+        [Parameter(Mandatory=$False)][string]$Personality,
+        [Parameter(Mandatory=$False)][string]$RegionOverride
         )
-        # Get Identity Provider
-        $cloudId    = New-Object net.openstack.Core.Domain.CloudIdentity
-        $cloudId.Username = $Credentials.CloudUsername
-        $cloudId.APIKey   = $Credentials.CloudAPIKey
-        $cip        = New-Object net.openstack.Providers.Rackspace.CloudIdentityProvider($cloudId)
 
-        # Get Cloud Servers Provider
-        $cloudServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
+    # Get Identity Provider
+    $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
+
+    # Get Cloud Servers Provider
+    $cloudServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
 
 
-        # Use Region code associated with Account, or was an override provided?
-        if ($RegionOverride)
-        {
-            $Region = $Global:RegionOverride
-        } else {
-            $Region = $Credentials.Region
-        }
+    # Use Region code associated with Account, or was an override provided?
+    if ($RegionOverride) {
+        $Region = $Global:RegionOverride
+    } else {
+        $Region = $Credentials.Region
+    }
 
 
-        # DEBUGGING             
-        Write-Debug -Message "ServerID: $ServerID"
-        Write-Debug -Message "Region..: $Region"
+    # DEBUGGING   
+    Write-Debug -Message "Initialize-CloudServer"          
+    Write-Debug -Message "ServerID: $ServerID"
+    Write-Debug -Message "Region..: $Region"
 
             
-        # Delete the Server
-        return $cloudServersProvider.RebuildServer($ServerId, $ServerName, $ImageId, $FlavorId, $AdminPassword, $AccessIPv4, $AccessIPv6, $Metadata, $DiskConfig, $Personality, $Region, $cloudId)
+    # Delete the Server
+    return $cloudServersProvider.RebuildServer($ServerId, $ServerName, $ImageId, $FlavorId, $AdminPassword, $AccessIPv4, $AccessIPv6, $Metadata, $DiskConfig, $Personality, $Region, $cloudId)
 }
 
 #ResizeServer
 function Resize-CloudServer{
     Param(
-        [Parameter(Position=0,Mandatory=$true)][string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
-        [Parameter(Position=1,Mandatory=$true)][string]$ServerId = $(throw "Please specify server ID with -ServerId parameter"),
-        [Parameter(Position=2,Mandatory=$true)][string]$ServerName = $(throw "Please specify server name with -ServerName parameter"),
-        [Parameter(Position=3,Mandatory=$true)][string]$FlavorId = $(throw "Please specify server name with -ServerName parameter"),
-        [Parameter(Position=4,Mandatory=$False)][string]$DiskConfig,
-        [Parameter(Position=5,Mandatory=$False)][string]$RegionOverride
+        [Parameter(Mandatory=$true)][string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
+        [Parameter(Mandatory=$true)][string]$ServerId = $(throw "Please specify server ID with -ServerId parameter"),
+        [Parameter(Mandatory=$true)][string]$ServerName = $(throw "Please specify server name with -ServerName parameter"),
+        [Parameter(Mandatory=$true)][string]$FlavorId = $(throw "Please specify server name with -ServerName parameter"),
+        [Parameter(Mandatory=$False)][string]$DiskConfig,
+        [Parameter(Mandatory=$False)][string]$RegionOverride
         )
 }
