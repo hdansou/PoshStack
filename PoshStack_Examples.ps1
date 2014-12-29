@@ -31,5 +31,5 @@ Foreach ($flavor in $flavors)
 Get-CloudServerDetails -ServerID "bb090f6e-31a2-4985-8011-ad1978adf834" -Account demo -RegionOverride DFW
 Get-CloudServerVolumes -ServerID "bb090f6e-31a2-4985-8011-ad1978adf834" -Account demo -RegionOverride DFW
 
-#New-CloudServer -Account demo -ServerName "foobardf" -FlavorID $flavors[0].id -ImageID $images[0].id -RegionOverride DFW
-Restart-CloudServer -Account demo -ServerId "bb090f6e-31a2-4985-8011-ad1978adf834" -RebootType ([net.openstack.Core.Domain.RebootType]::Hard)   -RegionOverride DFW
+#New-CloudServer -Account demo -ServerName "MyNewServer" -FlavorID $flavors[0].id -ImageID $images[0].id -RegionOverride DFW
+#Restart-CloudServer -Account demo -ServerId "bb090f6e-31a2-4985-8011-ad1978adf834" -RebootType ([net.openstack.Core.Domain.RebootType]::Hard)   -RegionOverride DFW
