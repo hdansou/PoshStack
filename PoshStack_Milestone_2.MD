@@ -15,6 +15,8 @@ Initial coverage of Cloud Files, to include the following OpenStack.NET SDK func
 | DeleteObjectMetadata        | Remove-CloudFilesObjectMetadata       |
 | DeleteObjects               | Remove-CloudFilesObjects              |
 | DisableCDNOnContainer       | Disable-CloudFilesContainerCDN        |
+| DisableStaticWebOnContainer | Disable-CloudFilesStaticWebOnContainer|
+| EnableCDNOnContainer        | Enable-CloudFilesContainerCDN         |
 | EnableStaticWebOnContainer  | Enable-CloudFilesStaticWebOnContainer |
 | GetContainerCDNHeader       | Get-CloudFilesContainerCDNHeader      |
 | GetContainerHeader          |	Get-CloudFilesContainerHeader         |
