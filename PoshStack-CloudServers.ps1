@@ -3,9 +3,6 @@
 PoshStack
                                                     NextGen Servers
 
-Authors
------------
-    Don Schenck (don.schenck@rackspace.com)
     
 Description
 -----------

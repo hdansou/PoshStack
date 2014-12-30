@@ -4,9 +4,6 @@ PoshStack
                                                        Master Module 
                                                          Version 0.1
 
-Authors
------------
-    Don Schenck (don.schenck@rackspace.com)
         
 Description
 -----------

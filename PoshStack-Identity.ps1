@@ -3,10 +3,7 @@
 PoshStack
     Identity
 
-Author
------------
-    Don Schenck (don.schenck@rackspace.com)
-    
+
 Description
 -----------
 **TODO**PowerShell v3 module for interaction with NextGen Rackspace Cloud API (PoshNova) 
