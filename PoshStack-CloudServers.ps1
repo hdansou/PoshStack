@@ -501,7 +501,7 @@ function Get-CloudServerFlavors {
         [Parameter (Mandatory=$False)][int]    $MinDiskInGB,
         [Parameter (Mandatory=$False)][int]    $MinRamInMB,
         [Parameter (Mandatory=$False)][string] $MarkerId,
-        [Parameter (Mandatory=$False)][int]   $Limit,
+        [Parameter (Mandatory=$False)][int]   $Limit = 10000,
         [Parameter (Mandatory=$False)][switch]$Details
     )
 
@@ -537,11 +537,6 @@ function Get-CloudServerFlavors {
         Write-Debug -Message "Limit.........: $Limit"  
 
 
-
-        # If limit is not specified, it will be zero, which should be 999
-        if ($Limit -le 0) {
-            $Limit = 9999
-        }
 
 
         # Get the list of Flavors
@@ -621,7 +616,7 @@ function Get-CloudServerImages {
         [Parameter (Mandatory=$False)][net.openstack.Core.Domain.ImageState] $ImageStatus,
         [Parameter (Mandatory=$False)][datetime] $ChangesSince,
         [Parameter (Mandatory=$False)][string] $MarkerId,
-        [Parameter (Mandatory=$False)][int] $Limit,
+        [Parameter (Mandatory=$False)][int] $Limit = 10000,
         [Parameter (Mandatory=$False)][net.openstack.Core.Domain.ImageType]$ImageType,
         [Parameter (Mandatory=$False)][switch] $Details
     )
@@ -662,9 +657,6 @@ function Get-CloudServerImages {
             Write-Debug -Message "ImageType........: $ImageType"
             Write-Debug -Message "Region...........: $Region"
 
-            if ($Limit -le 0) {
-                $Limit = 9999 #int
-            }
            
             $Region = $Region
             
@@ -756,7 +748,7 @@ function Get-CloudServers{
         [Parameter (Mandatory=$False)][string]$ServerName,
         [Parameter (Mandatory=$False)][object]$ServerState,
         [Parameter (Mandatory=$False)][string]$MarkerId,
-        [Parameter (Mandatory=$False)][int]   $Limit,
+        [Parameter (Mandatory=$False)][int]   $Limit = 10000,
         [Parameter (Mandatory=$False)][object]$ChangesSince,
         [Parameter (Mandatory=$False)][switch]$Details
     )
@@ -784,11 +776,6 @@ function Get-CloudServers{
             }
 
 
-            # If limit is not specified, it will be zero, which should be 999
-            if ($Limit -le 0)
-            {
-                $Limit = 9999
-            }
 
 
             # DEBUGGING        

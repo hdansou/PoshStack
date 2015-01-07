@@ -18,7 +18,7 @@ function Remove-CloudFilesObjects{
         [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required Cloud Account with -Account parameter"),
         [Parameter (Mandatory=$True)] [string] $ContainerName= $(throw "Please specify required Container Name with the -ContainerName paramter"),
         [Parameter (Mandatory=$True)] [array]  $ItemsToDelete = $(throw "Please specify required items to be deleted with the -ItemsToDelete parameter"),
-        [Parameter (Mandatory=$False)][array]  $Headers = $Null,
+        [Parameter (Mandatory=$False)][hashtable]  $Headers = $Null,
         [Parameter (Mandatory=$False)][bool]   $UseInternalUrl = $False,
         [Parameter (Mandatory=$False)][string] $RegionOverride = $Null
     )
@@ -58,23 +58,58 @@ function Remove-CloudFilesObjects{
         # In this example, three objects are deleted from container "Container1", and two objects are deleted from container "Container2"
 
         Write-Host "Create IEnumerable array"
-        $ItemsArray = @()
+        
+        $ItemsArray = New-Object 'System.Collections.Generic.List[hashtable]'
+        $hdr = New-Object 'System.Collections.Generic.Dictionary[String,String]'
+        
+        Write-Host "ItemsArray is type:"
+        Write-Host $ItemsArray.GetType()
+
+        
+        
+        Write-Host "Add items to array"
 
         foreach($Item in $ItemsToDelete){
-            $ThisItem = @()
-            $ThisItem += $ContainerName
-            $ThisItem += $Item
-            Write-Host $ThisItem
-            $ItemsArray += $ThisItem
+            $ContainerName
+            $Item
+            $ThisItem = New-Object 'System.Collections.Generic.Dictionary[String,String]'
+
+            #$ThisItem += $ContainerName
+            #$ThisItem += $Item
+            Write-Host "Add container name to ThisItem"
+            Write-Host $ThisItem.GetType()
+            #$ThisArray.Add($ThisItem)
+            #$ItemsArray.Add($ThisItem)
+            Write-Host "Adding ThisItem to ItemsArray"
+            #$ItemsArray.add($ContainerName, $Item)
+            #$ItemsArray.Add($ThisItem)
+            $ThisItem.Add($ContainerName, $Item)
+            #$ThisArray += $ThisItem
+            Write-Host "Added ThisItem to ItemsArray"
+            $ItemsArray.Add($ThisItem)
         }
         Write-Host "Itemsarray:"
-        Write-Host $ItemsArray.Length
+        #$ItemsArray
+        Write-Host $ItemsArray.Count
+        Write-Host "ItemsArray is type:"
+        Write-Host $ItemsArray.GetType()
+        Write-Host "Headers is type:"
         Write-Host $Headers.GetType()
+        Write-Host "Region is type:"
         Write-Host $Region.GetType()
+        Write-Host "UseInternalUrl is type:"
         Write-Host $UseInternalUrl.GetType()
         Write-Host "Region $Region"
         Write-Host $cloudId
-        $cloudFilesProvider.BulkDelete($ItemsArray, $Headers, $Region, $UseInternalUrl, $cloudId)
+
+        Write-Host "CALL THE METHOD!"
+        #$cloudFilesProvider.BulkDelete($ItemsArray, $Headers, $Region, $UseInternalUrl, $cloudId)
+
+        $Foo = New-Object 'System.Collections.Generic.Dictionary[String,String]'
+        #$Foo.Add("Container1","book.docx")
+        $Foo.Add("Container1","amen_main.html")
+        $cloudFilesProvider.BulkDelete($Foo, $hdr, $Region, $UseInternalUrl, $cloudId)
+        #$cloudFilesProvider.BulkDelete($ItemsArray, $hdr, $Region, $UseInternalUrl, $cloudId)
 
     }
     catch {
@@ -759,10 +794,185 @@ function Copy-CloudFilesObjectToFile{
 #ListCDNContainers **TODO** (use -CDN switch)
 #ListContainers **TODO**
 function Get-CloudFilesContainers{
+    Param(
+        [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required Cloud Account with -Account parameter"),
+        [Parameter (Mandatory=$False)][int]    $Limit = 10000,
+        [Parameter (Mandatory=$False)][string] $Marker = $null,
+        [Parameter (Mandatory=$False)][string] $MarkerEnd = $Null,
+        [Parameter (Mandatory=$False)][bool]   $UseInternalUrl = $False,
+        [Parameter (Mandatory=$False)][switch] $CDN,
+        [Parameter (Mandatory=$False)][string] $RegionOverride = $Null
+    )
+
+    Get-CloudAccount($Account)
+
+    if ($RegionOverride){
+        $Global:RegionOverride = $RegionOverride
+    }
+
+    try {
+
+        # Get Identity Provider
+        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
+
+        # Get Cloud Servers Provider
+        $cloudFilesProvider = New-Object net.openstack.Providers.Rackspace.CloudFilesProvider
+
+        # Use Region code associated with Account, or was an override provided?
+        if ($RegionOverride) {
+            $Region = $Global:RegionOverride
+        } else {
+            $Region = $Credentials.Region
+        }
+
+        # DEBUGGING       
+        Write-Debug -Message "Get-CloudFilesContainers"
+        Write-Debug -Message "Limit.........: $Limit"
+        Write-Debug -Message "Marker........: $Marker"
+        Write-Debug -Message "MarkerEnd.....: $MarkerEnd"
+        Write-Debug -Message "RegionOverride: $RegionOverride" 
+        Write-Debug -Message "UseInternalUrl: $UseInternalUrl" 
+        
+        If ($CDN) {
+            Return $cloudFilesProvider.ListCDNContainers($Limit, $Marker, $MarkerEnd, $True, $Region, $cloudId)
+        } else {
+            Return $cloudFilesProvider.ListContainers($Limit, $Marker, $MarkerEnd, $Region, $UseInternalUrl, $cloudId)
+        }
+
+    }
+    catch {
+        Invoke-Exception($_.Exception)
+    }
+<#
+ .SYNOPSIS
+ Get the containers in a region.
+
+ .DESCRIPTION
+ The Get-CloudFilesContainers cmdlet lists the storage containers in your account and sorts them by name. The list is limited to 10,000 containers at a time.
+ 
+ .PARAMETER Account
+ Use this parameter to indicate which account you would like to execute this request against. 
+ Valid choices are defined in PoshStack configuration file.
+
+ .PARAMETER Limit
+ This parameter allows you to limit the number of results.
+
+ .PARAMETER Marker
+ This parameter allows you to begin the list at a specific container name.
+
+ .PARAMETER MarkerEnd
+ This parameter allows you to end the list at a specific container name.
+
+ .PARAMETER UseInternalUrl
+ Use the endpoint internal URL instead of the endpoint Public URL. 
+
+ .PARAMETER CDN
+ This parameter will return CDN-related information for each container.
+
+ .PARAMETER RegionOverride
+ This parameter will temporarily override the default region set in PoshStack configuration file. 
+
+ .EXAMPLE
+ PS C:\Users\Administrator> Get-CloudFilesContainers -Account demo
+ This example will get the containers in the default region for the account "demo".
+
+ .LINK
+ http://docs.rackspace.com/files/api/v1/cf-devguide/content/GET_listcontainers_v1__account__accountServicesOperations_d1e000.html
+#>
 }
 
 #ListObjects **TODO**
 function Get-CloudFilesObjects{
+    Param(
+        [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required Cloud Account with -Account parameter"),
+        [Parameter (Mandatory=$True)] [string] $Container = $(throw "Please specify required Container with the -Container parameter"),
+        [Parameter (Mandatory=$False)][int]    $Limit = 10000,
+        [Parameter (Mandatory=$False)][string] $Marker = $null,
+        [Parameter (Mandatory=$False)][string] $MarkerEnd = $Null,
+        [Parameter (Mandatory=$False)][string] $Prefix = $Null,
+        [Parameter (Mandatory=$False)][bool]   $UseInternalUrl = $False,
+        [Parameter (Mandatory=$False)][string] $RegionOverride = $Null
+    )
+
+    Get-CloudAccount($Account)
+
+    if ($RegionOverride){
+        $Global:RegionOverride = $RegionOverride
+    }
+
+    try {
+
+        # Get Identity Provider
+        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
+
+        # Get Cloud Servers Provider
+        $cloudFilesProvider = New-Object net.openstack.Providers.Rackspace.CloudFilesProvider
+
+        # Use Region code associated with Account, or was an override provided?
+        if ($RegionOverride) {
+            $Region = $Global:RegionOverride
+        } else {
+            $Region = $Credentials.Region
+        }
+
+        # DEBUGGING       
+        Write-Debug -Message "Get-CloudFilesObjects"
+        Write-Debug -Message "Container.....: $Container"
+        Write-Debug -Message "Limit.........: $Limit"
+        Write-Debug -Message "Marker........: $Marker"
+        Write-Debug -Message "MarkerEnd.....: $MarkerEnd"
+        Write-Debug -Message "Prefix........: $Prefix"
+        Write-Debug -Message "RegionOverride: $RegionOverride" 
+        Write-Debug -Message "UseInternalUrl: $UseInternalUrl" 
+        
+        $ListOfObjects = $cloudFilesProvider.ListObjects($Container, $Limit, $Marker, $MarkerEnd, $Prefix, $Region, $UseInternalUrl, $cloudId)
+        foreach ($cloudObject in $ListOfObjects) {
+            Add-Member -InputObject $cloudObject -MemberType NoteProperty -Name Region -Value $Region
+            Add-Member -InputObject $cloudObject -MemberType NoteProperty -Name Container -Value $Container
+        }
+
+        Return $ListOfObjects
+
+    }
+    catch {
+        Invoke-Exception($_.Exception)
+    }
+<#
+ .SYNOPSIS
+ Get the containers in a region.
+
+ .DESCRIPTION
+ The Get-CloudFilesContainers cmdlet lists the storage containers in your account and sorts them by name. The list is limited to 10,000 containers at a time.
+ 
+ .PARAMETER Account
+ Use this parameter to indicate which account you would like to execute this request against. 
+ Valid choices are defined in PoshStack configuration file.
+
+ .PARAMETER Limit
+ This parameter allows you to limit the number of results.
+
+ .PARAMETER Marker
+ This parameter allows you to begin the list at a specific container name.
+
+ .PARAMETER MarkerEnd
+ This parameter allows you to end the list at a specific container name.
+
+ .PARAMETER UseInternalUrl
+ Use the endpoint internal URL instead of the endpoint Public URL. 
+
+ .PARAMETER CDN
+ This parameter will return CDN-related information for each container.
+
+ .PARAMETER RegionOverride
+ This parameter will temporarily override the default region set in PoshStack configuration file. 
+
+ .EXAMPLE
+ PS C:\Users\Administrator> Get-CloudFilesContainers -Account demo
+ This example will get the containers in the default region for the account "demo".
+
+ .LINK
+ http://docs.rackspace.com/files/api/v1/cf-devguide/content/GET_listcontainers_v1__account__accountServicesOperations_d1e000.html
+#>
 }
 
 #MoveObject **TODO**
