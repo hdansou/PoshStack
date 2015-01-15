@@ -2,6 +2,10 @@
 
 PowerShell client for OpenStack, built on the OpenStack.NET SDK v1
 
+## Want to install PoshStack?
+See the file "poshstack getting started guide.md".
+
+
 ##Development Milestones
 (see the file PoshStack_Milestone_n.MD for details regarding each milestone - 'n' is the Milestone number):  
 1. Basic coverage of Cloud Servers Provider functions.  
