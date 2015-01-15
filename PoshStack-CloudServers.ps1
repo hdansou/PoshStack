@@ -1050,8 +1050,8 @@ function New-CloudServer {
         [Parameter(Mandatory=$true)][string]$FlavorId = $(throw "Please specify server flavor with -FlavorId parameter"),
         [Parameter(Mandatory=$false)][net.openstack.Core.Domain.DiskConfiguration]$DiskConfig,
         [Parameter(Mandatory=$false)][net.openstack.Core.Domain.Metadata]$Metadata,
-        [Parameter(Mandatory=$false)][bool]$AttachToServiceNetwork,
-        [Parameter(Mandatory=$false)][bool]$AttachToPublicNetwork,
+        [Parameter(Mandatory=$false)][bool]$AttachToServiceNetwork=$true,
+        [Parameter(Mandatory=$false)][bool]$AttachToPublicNetwork=$true,
         [Parameter(Mandatory=$false)][array]$Networks,
         [Parameter(Mandatory=$false)][ValidateCount(0,5)][string[]]$PersonalityFile,
         [Parameter(Mandatory=$false)][string]$RegionOverride
