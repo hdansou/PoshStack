@@ -57,12 +57,9 @@ CD C:\Users\Administrator\Documents\WindowsPowerShell\Modules
 and install PoshStack:
 
 ```dos
-Nuget install PoshStack
+Nuget install PoshStack -ExcludeVersion
 ```
-### Rename the resulting folder
-```dos
-Rename PoshStack.0.0.1 PoshStack
-```
+
 
 
 ## 3. PoshStack Configuration
