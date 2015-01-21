@@ -13,9 +13,9 @@ Description
 #CloudServersProvider.AttachServerVolume
 function Add-CloudServerVolume{
     Param(
-        [Parameter (Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -Account parameter"),
-        [Parameter (Mandatory=$True)][string] $ServerId = $(throw "Server Id is required"),
-        [Parameter (Mandatory=$True)][string] $VolumeId = $(throw "Volume Id is required"),
+        [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required Cloud Account with -Account parameter"),
+        [Parameter (Mandatory=$True)] [string] $ServerId = $(throw "Server Id is required"),
+        [Parameter (Mandatory=$True)] [string] $VolumeId = $(throw "Volume Id is required"),
         [Parameter (Mandatory=$False)][string] $StorageDevice,
         [Parameter (Mandatory=$False)][string] $RegionOverride
         )
@@ -130,7 +130,7 @@ function Set-CloudServerAdministratorPassword{
         Write-Debug -Message "Password......: $Password" 
 
 
-        return $cloudServersProvider.ChangeAdministratorPassword($ServerId, $Password, $Region, $cloudId)
+        $cloudServersProvider.ChangeAdministratorPassword($ServerId, $Password, $Region, $cloudId)
 
     }
     catch {
@@ -169,11 +169,11 @@ function Set-CloudServerAdministratorPassword{
 #CreateImage
 function New-CloudServerImage{
     Param(
-        [Parameter (Mandatory=$True)] [string] $Account    = $(throw "Please specify required Cloud Account with -Account parameter"),
-        [Parameter (Mandatory=$True)] [string] $ServerId   = $(throw "Server Id is required"),
-        [Parameter (Mandatory=$True)] [string] $ImageName  = $(throw "Image Name is required"),
+        [Parameter (Mandatory=$True)] [string]    $Account    = $(throw "Please specify required Cloud Account with -Account parameter"),
+        [Parameter (Mandatory=$True)] [string]    $ServerId   = $(throw "Server Id is required"),
+        [Parameter (Mandatory=$True)] [string]    $ImageName  = $(throw "Image Name is required"),
         [Parameter (Mandatory=$False)][net.openstack.Core.Domain.Metadata] $Metadata,
-        [Parameter (Mandatory=$False)][string] $RegionOverride
+        [Parameter (Mandatory=$False)][string]    $RegionOverride
         )
 
             
@@ -205,9 +205,10 @@ function New-CloudServerImage{
     Write-Debug -Message "Metadata..: $Metadata"
     Write-Debug -Message "Region....: $Region"
 
+
             
     # Create a Server Image
-    Return $cloudServersProvider.CreateImage($ServerId, $ImageName, $Metadata, $Region, $cloudId)
+    $cloudServersProvider.CreateImage($ServerId, $ImageName, $Metadata, $Region, $cloudId)
 
 <#
  .SYNOPSIS
@@ -290,7 +291,7 @@ function Get-CloudServerVolumeDetails{
 
             
     # Get the addresses
-    return $cloudServersProvider.GetServerVolumeDetails($ServerId, $VolumeId, $Region, $cloudId)
+    $cloudServersProvider.GetServerVolumeDetails($ServerId, $VolumeId, $Region, $cloudId)
 
 
 <#
@@ -356,7 +357,7 @@ function Get-CloudServerAddresses{
 
             
     # Get the addresses
-    return $cloudServersProvider.ListAddresses($ServerId, $Region, $cloudId)
+    $cloudServersProvider.ListAddresses($ServerId, $Region, $cloudId)
 
 
 <#
@@ -445,7 +446,7 @@ function Update-CloudServer{
 
             
     # Update the Server
-    return $cloudServersProvider.UpdateServer($ServerId, $ServerName, $AccessIPv4, $AccessIPv6, $Region, $cloudId)
+    $cloudServersProvider.UpdateServer($ServerId, $ServerName, $AccessIPv4, $AccessIPv6, $Region, $cloudId)
 
 
 <#
@@ -496,13 +497,13 @@ function Update-CloudServer{
 #ListFlavorsWithDetails
 function Get-CloudServerFlavors {
     Param(
-        [Parameter (Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -account parameter"),
-        [Parameter (Mandatory=$False)][string]$RegionOverride,
+        [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required Cloud Account with -account parameter"),
+        [Parameter (Mandatory=$False)][string] $RegionOverride,
         [Parameter (Mandatory=$False)][int]    $MinDiskInGB,
         [Parameter (Mandatory=$False)][int]    $MinRamInMB,
         [Parameter (Mandatory=$False)][string] $MarkerId,
-        [Parameter (Mandatory=$False)][int]   $Limit = 10000,
-        [Parameter (Mandatory=$False)][switch]$Details
+        [Parameter (Mandatory=$False)][int]    $Limit = 10000,
+        [Parameter (Mandatory=$False)][switch] $Details
     )
 
     Get-CloudAccount($Account)
@@ -609,7 +610,7 @@ function Get-CloudServerFlavors {
 function Get-CloudServerImages {
     
     Param(
-        [Parameter (Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -account parameter"),
+        [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required Cloud Account with -account parameter"),
         [Parameter (Mandatory=$False)][string]$RegionOverride,
         [Parameter (Mandatory=$False)][string]$Server,
         [Parameter (Mandatory=$False)][string]$ImageName,
@@ -673,7 +674,7 @@ function Get-CloudServerImages {
                 Write-Verbose "No Images found in region '$Region'."
             }
         elseif($ImageList.Count -ne 0){
-    		return $ImageList;
+    		$ImageList;
         }
     }
     catch {
@@ -808,7 +809,7 @@ function Get-CloudServers{
             {
                 Add-Member -InputObject $server -MemberType NoteProperty -Name Region -Value $Region
             }
-    		return $ServerList;
+    		$ServerList;
         }
     }
     catch {
@@ -904,7 +905,7 @@ function Get-CloudServerDetails {
 
 
     # Get the Server details
-    return $cloudServersProvider.GetDetails($ServerId, $Region, $cloudId)
+    $cloudServersProvider.GetDetails($ServerId, $Region, $cloudId)
 
 <#
  .SYNOPSIS
@@ -962,9 +963,9 @@ function Get-CloudServerDetails {
 function Get-CloudServerVolumes {
     
         Param(
-        [Parameter (Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -Account parameter"),
-        [Parameter (Mandatory=$True)][string] $ServerId = $(throw "Please specify required server Id with -ServerId parameter"),
-        [Parameter (Mandatory=$False)][string]$RegionOverride
+        [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required Cloud Account with -Account parameter"),
+        [Parameter (Mandatory=$True)] [string] $ServerId = $(throw "Please specify required server Id with -ServerId parameter"),
+        [Parameter (Mandatory=$False)][string] $RegionOverride
     )
 
     Get-CloudAccount($Account)
@@ -995,7 +996,7 @@ function Get-CloudServerVolumes {
 
 
     # Get the list of servers
-    return $cloudServersProvider.ListServerVolumes($ServerId, $Region, $cloudId)
+    $cloudServersProvider.ListServerVolumes($ServerId, $Region, $cloudId)
 
 <#
  .SYNOPSIS
@@ -1044,10 +1045,10 @@ function Get-CloudServerVolumes {
 #CreateServer
 function New-CloudServer {
     Param(
-        [Parameter(Mandatory=$true)][string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
-        [Parameter(Mandatory=$true)][string]$ServerName = $(throw "Please specify server name with -ServerName parameter"),
-        [Parameter(Mandatory=$true)][string]$ImageId = $(throw "Please specify the image Id with -ImageId parameter"),
-        [Parameter(Mandatory=$true)][string]$FlavorId = $(throw "Please specify server flavor with -FlavorId parameter"),
+        [Parameter(Mandatory=$true)] [string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
+        [Parameter(Mandatory=$true)] [string]$ServerName = $(throw "Please specify server name with -ServerName parameter"),
+        [Parameter(Mandatory=$true)] [string]$ImageId = $(throw "Please specify the image Id with -ImageId parameter"),
+        [Parameter(Mandatory=$true)] [string]$FlavorId = $(throw "Please specify server flavor with -FlavorId parameter"),
         [Parameter(Mandatory=$false)][net.openstack.Core.Domain.DiskConfiguration]$DiskConfig,
         [Parameter(Mandatory=$false)][net.openstack.Core.Domain.Metadata]$Metadata,
         [Parameter(Mandatory=$false)][bool]$AttachToServiceNetwork=$true,
@@ -1159,8 +1160,8 @@ function New-CloudServer {
 #DeleteServer
 function Remove-CloudServer{
     Param(
-        [Parameter(Mandatory=$true)][string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
-        [Parameter(Mandatory=$true)][string]$ServerId = $(throw "Please specify server Id with -ServerId parameter"),
+        [Parameter(Mandatory=$true)] [string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
+        [Parameter(Mandatory=$true)] [string]$ServerId = $(throw "Please specify server Id with -ServerId parameter"),
         [Parameter(Mandatory=$false)][string]$RegionOverride
         )
 
@@ -1187,7 +1188,7 @@ function Remove-CloudServer{
     Write-Debug -Message "Region..: $Region"
           
     # Delete the Server
-    return $cloudServersProvider.DeleteServer($ServerId, $Region, $cloudId)
+    $cloudServersProvider.DeleteServer($ServerId, $Region, $cloudId)
 
 <#
  .SYNOPSIS
@@ -1224,9 +1225,9 @@ function Remove-CloudServer{
 #RebootServer
 function Restart-CloudServer{
     Param(
-        [Parameter(Mandatory=$true)][string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
-        [Parameter(Mandatory=$true)][string]$ServerId = $(throw "Please specify server Id with -ServerId parameter"),
-        [Parameter(Mandatory=$true)][net.openstack.Core.Domain.RebootType]$RebootType,
+        [Parameter(Mandatory=$true)] [string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
+        [Parameter(Mandatory=$true)] [string]$ServerId = $(throw "Please specify server Id with -ServerId parameter"),
+        [Parameter(Mandatory=$true)] [net.openstack.Core.Domain.RebootType]$RebootType,
         [Parameter(Mandatory=$False)][string]$RegionOverride
         )
 
@@ -1255,7 +1256,7 @@ function Restart-CloudServer{
 
             
     # Reboot the Server
-    return $cloudServersProvider.RebootServer($ServerId, $RebootType, $Region, $cloudId)
+    $cloudServersProvider.RebootServer($ServerId, $RebootType, $Region, $cloudId)
 
 <#
  .SYNOPSIS
@@ -1342,7 +1343,7 @@ function Initialize-CloudServer{
 
             
     # Delete the Server
-    return $cloudServersProvider.RebuildServer($ServerId, $ServerName, $ImageId, $FlavorId, $AdminPassword, $AccessIPv4, $AccessIPv6, $Metadata, $DiskConfig, $Personality, $Region, $cloudId)
+    $cloudServersProvider.RebuildServer($ServerId, $ServerName, $ImageId, $FlavorId, $AdminPassword, $AccessIPv4, $AccessIPv6, $Metadata, $DiskConfig, $Personality, $Region, $cloudId)
 
 <#
  .SYNOPSIS
@@ -1407,10 +1408,10 @@ function Initialize-CloudServer{
 #ResizeServer
 function Resize-CloudServer{
     Param(
-        [Parameter(Mandatory=$true)][string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
-        [Parameter(Mandatory=$true)][string]$ServerId = $(throw "Please specify server Id with -ServerId parameter"),
-        [Parameter(Mandatory=$true)][string]$ServerName = $(throw "Please specify server name with -ServerName parameter"),
-        [Parameter(Mandatory=$true)][string]$FlavorId = $(throw "Please specify server name with -ServerName parameter"),
+        [Parameter(Mandatory=$true)] [string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
+        [Parameter(Mandatory=$true)] [string]$ServerId = $(throw "Please specify server Id with -ServerId parameter"),
+        [Parameter(Mandatory=$true)] [string]$ServerName = $(throw "Please specify server name with -ServerName parameter"),
+        [Parameter(Mandatory=$true)] [string]$FlavorId = $(throw "Please specify server name with -ServerName parameter"),
         [Parameter(Mandatory=$False)][string]$DiskConfig,
         [Parameter(Mandatory=$False)][string]$RegionOverride
         )
@@ -1442,7 +1443,7 @@ function Resize-CloudServer{
 
             
     # Delete the Server
-    return $cloudServersProvider.ResizeServer($ServerId, $ServerName, $FlavorId, $DiskConfig, $Region, $cloudId)
+    $cloudServersProvider.ResizeServer($ServerId, $ServerName, $FlavorId, $DiskConfig, $Region, $cloudId)
 
 <#
  .SYNOPSIS
