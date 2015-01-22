@@ -1094,8 +1094,8 @@ function New-CloudServer {
 
             
     # Create a Server
-    $newServer = $cloudServersProvider.CreateServer($ServerName, $ImageId, $FlavorId, $DiskConfig, $Metadata, $null, $AttachToServiceNetwork, $AttachToPublicNetwork, $Networks, $Region, $cloudId)
-    $newServer | Format-Table Id, AdminPassword
+    $cloudServersProvider.CreateServer($ServerName, $ImageId, $FlavorId, $DiskConfig, $Metadata, $null, $AttachToServiceNetwork, $AttachToPublicNetwork, $Networks, $Region, $cloudId)
+    #$newServer | Format-Table Id, AdminPassword
 
 <#
  .SYNOPSIS

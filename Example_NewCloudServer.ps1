@@ -6,4 +6,5 @@ $Image = Get-CloudServerImages -Account demo | WHERE {$_.Name -contains 'CentOS 
 $meta = New-Object net.openstack.Core.Domain.Metadata
 $meta.Add("first","1")
 $meta.Add("second","2")
-New-CloudServer -Account demo -ServerName $Servername -ImageId $Image.Id -FlavorId $Flavor -AttachToServiceNetwork $true -AttachToPublicNetwork $true
+$MyNewServer = New-CloudServer -Account demo -ServerName $Servername -ImageId $Image.Id -FlavorId $Flavor -AttachToServiceNetwork $true -AttachToPublicNetwork $true
+$MyNewServer.AdminPassword
