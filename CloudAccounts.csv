@@ -1,0 +1,3 @@
+AccountName,CloudUsername,CloudAPIKey,CloudDDI,Region
+demo,demouser,be124cb4d6704e8a9c60e67bb3189999,123456,IAD
+mydfw,demouser,be124cb4d6704e8a9c60e67bb3189999,123456,dfw

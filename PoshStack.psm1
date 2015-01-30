@@ -38,6 +38,7 @@ function Get-CloudIdentityProvider{
     $cip = New-Object net.openstack.Providers.Rackspace.CloudIdentityProvider($cloudId)
     Return $cloudId
 }
+
 function Get-CloudAccount {
     <#
     Read $Global:PoshStackConfigFile then populate global account variables 
@@ -73,125 +74,6 @@ function Get-CloudAccount {
 
 }
 
-function Get-AuthToken {
-    param (
-        [Parameter(Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -account parameter")
-    )
-    
-    # Setting extra variables needed for function execution
-    $AuthURI = "https://identity.api.rackspacecloud.com/v2.0/tokens.xml"
-
-    # Check for current authentication token and retrieves a new one if needed
-    if ($Account -ne $Credentials.AccountName -or (Get-Date) -ge $token.access.token.expires) {
-        
-        Get-CloudAccount($Account)
-
-        $AuthBody = ('{
-            "auth":{
-                "RAX-KSKEY:apiKeyCredentials":{
-                    "username":"'+$Global:Credentials.CloudUsername+'",
-                    "apiKey":"'+$Global:Credentials.CloudAPIKey+'"
-                }
-            }
-        }')
-
-        # Making the call to the token authentication API and saving it's output as a global variable for reference in every other function.
-        $Global:token = (Invoke-RestMethod -Uri $AuthURI -Body $AuthBody -ContentType application/json -Method Post  -ErrorAction Stop) 
-        $CloudServerRegionList = ($token.access.serviceCatalog.service | Where-Object {$_.type -eq "compute"}).endpoint
-        $FinalToken = $token.access.token.id
-
-        <#
-        Headers in powershell need to be defined as a dictionary object, so here we're creating 
-        a dictionary object with the newly granted token. It's global, as it's needed in every future request.
-        #>
-
-        $global:HeaderDictionary = (new-object "System.Collections.Generic.Dictionary``2[[System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]")
-        $HeaderDictionary.Add("X-Auth-Token", $finaltoken)
-	}
-}
-
-function Get-CloudURI {
-    <#
-    Builds the first section of cloud API URI string based on the current 
-    value of the provided service type parameter.
-
-    It also makes use of the following global variables as defined in config file or provided by user in the case of $RegionOverride
-        $Global:Region - Datacenter name
-        $Global:RegionOverride - used in place of above if supplied
-        $CloudDDI - Cloud Account number
-
-    #>
-
-    param (
-        [Parameter(Mandatory=$True)]
-            [ValidateSet(
-                "servers",
-                "loadbalancers",
-                "blockstorage", 
-                "identity",
-                "autoscale",
-                "monitoring"
-            )] 
-            [string] $ServiceName
-    )
-
-    try {
-        
-
-        # Check for existence of prerequisite global variables
-        if ($Global:Credentials.Region -eq $null -or $Global:Credentials.CloudDDI -eq $null) {
-            throw "The global cloud account variables are not fully loaded, please ensure that Get-CloudAcount has been executed"
-        }
-        elseif ($RegionOverride){
-            if ($Credentials.region -like "lon"){
-                # LON cloud accounts do not support multi-region deployment yet
-                Remove-Variable -Name RegionOverride -Scope Global
-                throw "-RegionOverride switch is not supported with LON accounts at this time"
-            }
-            else {
-                $URIRegion = $Global:RegionOverride
-                Remove-Variable -Name RegionOverride -Scope Global
-            }
-        }
-        else{
-            $URIRegion = $Credentials.region
-        }
-
-        switch ($ServiceName) {
-            "servers" {
-                $CloudURI = "https://" + $URIRegion + "." + $ServiceName + ".api.rackspacecloud.com/v2/" + $Credentials.CloudDDI
-                break;
-            }
-            "identity" {
-                $CloudURI = "https://" + $ServiceName + ".api.rackspacecloud.com/v2.0/"
-                break;
-            }
-            "blockstorage" {
-                $CloudURI = "https://" + $URIRegion + "." + $ServiceName + ".api.rackspacecloud.com/v1/" + $Credentials.CloudDDI
-                break;
-            }
-            "loadbalancers" {
-                $CloudURI = "https://" + $URIRegion + "." + $ServiceName + ".api.rackspacecloud.com/v1.0/" + $Credentials.CloudDDI
-                break;
-            }
-            "autoscale" {
-                $CloudURI = "https://" + $URIRegion + "." + $ServiceName + ".api.rackspacecloud.com/v1.0/" + $Credentials.CloudDDI
-                break;
-            }
-            "monitoring" {
-                $CloudURI = "https://" + $ServiceName + ".api.rackspacecloud.com/v1.0/" + $Credentials.CloudDDI
-                break;
-            }
-            default {
-                throw "Looks like something went wrong and supplied service reference has not been recognised :("
-            }
-        }
-        return $CloudURI.ToLower()
-    }
-    catch {
-        Invoke-Exception($_.Exception)
-    }
-}
 
 function New-RandomComplexPassword ($length=12) {
     # Generate a complex password using characters from $chars
