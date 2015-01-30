@@ -10,9 +10,6 @@ The goal of this project is to give complete command line access to the OpenStac
 ### Prerequisite
 PoshStack requires Windows Management Framework 3.0 (or newer).
 
-### Note
-The current PoshStack package will be stored on PsGet.net. The code here, in Github, is always newer than the PsGet package, i.e. this is where development takes place, PsGet is where the results of the latest build are stored.
-
 ### Installation and Configuration
 Installation requires two steps: Install and Configure. PoshStack is installed using PsGet
 
