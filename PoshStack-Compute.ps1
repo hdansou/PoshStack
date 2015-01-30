@@ -1227,7 +1227,7 @@ function Restart-ComputeServer{
     Param(
         [Parameter(Mandatory=$true)] [string]$Account = $(throw "Please specify required Cloud Account with -Account parameter"),
         [Parameter(Mandatory=$true)] [string]$ServerId = $(throw "Please specify server Id with -ServerId parameter"),
-        [Parameter(Mandatory=$true)] [net.openstack.Core.Domain.RebootType]$RebootType,
+        [Parameter(Mandatory=$False)][net.openstack.Core.Domain.RebootType]$RebootType = [net.openstack.Core.Domain.RebootType]::Soft,
         [Parameter(Mandatory=$False)][string]$RegionOverride
         )
 

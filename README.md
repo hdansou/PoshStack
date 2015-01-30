@@ -27,7 +27,7 @@ Update the CloudAccounts.csv file with your cloud account credentials:
   * CloudDDI - This is your account number.
   * Region - This is your default region. Hint: For DevStack, this is "RegionOne".
 
-#### An example of the contents of CloudAccounts.csv
+##### An example of the contents of CloudAccounts.csv
 
 AccountName,CloudUsername,CloudAPIKey,CloudDDI,Region
 dummy1,clouduser,a3s45df6g78h9jk098h7g6f5d4s4d5f5,12345678,IAD
