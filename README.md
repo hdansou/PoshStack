@@ -13,12 +13,14 @@ PoshStack requires Windows Management Framework 3.0 (or newer).
 ### Installation and Configuration
 Installation requires two steps: Install and Configure. PoshStack is installed using PsGet
 
-1. Open a PowerShell prompt and run the following two lines:
+#### Install
+Open a PowerShell prompt and run the following two lines:
 ```bash
 (new-object Net.WebClient).DownloadString("http://psget.net/GetPsGet.ps1") | iex
 install-module PoshStack
 ```
-2. Update the CloudAccounts.csv file with your cloud account credentials:  
+#### Configure
+Update the CloudAccounts.csv file with your cloud account credentials:  
   * _CloudName_ - User-defined name for the account. This can be pretty much anything you desire, and it's only used in the context of PoshStack. For example, you may choose to name the accounts based on the default regions you assign to them. This _CloudName_ is **not** the same as your _CloudUsername_.
   * CloudUsername - This is your Openstack user name.
   * CloudAPIKey - This is your API key.
