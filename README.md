@@ -21,17 +21,22 @@ install-module PoshStack
 ```
 #### Configure
 Update the CloudAccounts.csv file with your cloud account credentials:  
-  * _CloudName_ - User-defined name for the account. This can be pretty much anything you desire, and it's only used in the context of PoshStack. For example, you may choose to name the accounts based on the default regions you assign to them. This _CloudName_ is **not** the same as your _CloudUsername_.
-  * CloudUsername - This is your Openstack user name.
-  * CloudAPIKey - This is your API key.
-  * CloudDDI - This is your account number.
-  * Region - This is your default region. Hint: For DevStack, this is "RegionOne".
+  * _Type_ - Is this account targeting Rackspace, specifically, or another OpenStack provider? Valid entries are "Rackspace" or "OpenStack".
+  * _AccountName_ - User-defined name for the account. This can be pretty much anything you desire, and it's only used in the context of PoshStack. For example, you may choose to name the accounts based on the default regions you assign to them. This _CloudName_ is **not** the same as your _CloudUsername_.
+  * _CloudUsername_ - This is your Rackspace or Openstack user name.
+  * _CloudPassword_ - This is your password. This is not used for Rackspace type accounts.
+  * _CloudAPIKey_ - This is your API key. This is not used for OpenStack type accounts.
+  * _IdentityEndpointUri_ - This is the endpoint. It is required for OpenStack type accounts. It is not used for Rackspace type accounts.
+  * _CloudDDI_ - This is your account number.
+  * _Region_ - This is your default region. Hint: For DevStack, this is "RegionOne".
 
 ##### An example of the contents of CloudAccounts.csv
 
-AccountName,CloudUsername,CloudAPIKey,CloudDDI,Region
-dummy1,clouduser,a3s45df6g78h9jk098h7g6f5d4s4d5f5,12345678,IAD
-dummy2,dummyuser,a3s45df6g78h9jk098h7g6f5d4s4d5f6,87654321,dfw
+Type,AccountName,CloudUsername,CloudPassword,CloudAPIKey,IdentityEndpointUri,Region,TenantId
+Rackspace,rackIAD,username_here,password_here,apikey_here,foo,IAD,123456
+Rackspace,rackDFW,username_here,password_here,apikey_here,foo,dfw,123456
+Rackspace,rackORD,username_here,password_here,apikey_here,foo,ord,123456
+OpenStack,devstack,username_here,password_here,foo,http://99.99.99.99:5000/v2.0/tokens/,RegionOne,username_here
 
 ## Contributing is a cinch as well...
 Make your contribution to the goodness. Fork the code, pick an issue, and get coding. If you're unsure where to start or what it all means, choose an issue and leave a comment, asking for assistance.
