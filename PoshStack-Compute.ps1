@@ -10,6 +10,46 @@ Description
 
 ############################################################################################>
 
+
+function Get-ComputeProvider {
+    Param(
+        [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required Cloud Account by using the -Account parameter")
+    )
+
+    # The Account comes from the file CloudAccounts.csv
+    # It has information regarding credentials and the type of provider (Generic or Rackspace)
+
+    Get-CloudAccount -Account $Account
+
+
+    # Is this Rackspace or Generic OpenStack?
+    switch ($Credentials.Type)
+    {
+        "Rackspace" {
+            # Get Identity Provider
+            $cloudId    = New-Object net.openstack.Core.Domain.CloudIdentity
+            $cloudId.Username = $Credentials.CloudUsername
+            $cloudId.APIKey   = $Credentials.CloudAPIKey
+            $Global:CloudId = New-Object net.openstack.Providers.Rackspace.CloudIdentityProvider($cloudId)
+            Return New-Object net.openstack.Providers.Rackspace.CloudServersProvider($cloudId)
+            #$csp = New-Object net.openstack.Providers.Rackspace.CloudServersProvider($cloudId)
+           # return $csp.ListServersWithDetails($Null, $Null, $Null, $Null, $Null, 100, $Null, "DFW", $cloudId)
+
+        }
+        "OpenStack" {
+            $CloudIdentityWithProject = New-Object net.openstack.Core.Domain.CloudIdentityWithProject
+            $CloudIdentityWithProject.Password = $Credentials.CloudPassword
+            $CloudIdentityWithProject.Username = $Credentials.CloudUsername
+            $CloudIdentityWithProject.ProjectId = New-Object net.openstack.Core.Domain.ProjectId($Credentials.TenantId)
+            $CloudIdentityWithProject.ProjectName = $Credentials.TenantId
+            $Uri = New-Object System.Uri($Credentials.IdentityEndpointUri)
+            $OpenStackIdentityProvider = New-Object net.openstack.Core.Providers.OpenStackIdentityProvider($Uri, $CloudIdentityWithProject)
+            Return New-Object net.openstack.Providers.Rackspace.CloudServersProvider($Null, $OpenStackIdentityProvider)
+        }
+    }
+}
+
+
 #ComputeServersProvider.AttachServerVolume
 function Add-ComputeServerVolume{
     Param(
@@ -20,19 +60,13 @@ function Add-ComputeServerVolume{
         [Parameter (Mandatory=$False)][string] $RegionOverride
         )
 
-    Get-CloudAccount($Account)
+    $ComputeServersProvider = Get-ComputeProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Servers Provider
-        $ComputeServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -49,8 +83,7 @@ function Add-ComputeServerVolume{
         Write-Debug -Message "VolumeId......: $VolumeId" 
         Write-Debug -Message "StorageDevice.: $StorageDevice" 
 
-
-        $ComputeServersProvider.AttachServerVolume($ServerId, $VolumeId, $StorageDevice, $Region, $cloudId)
+        $ComputeServersProvider.AttachServerVolume($ServerId, $VolumeId, $StorageDevice, $Region, $Null)
 
     }
     catch {
@@ -101,19 +134,13 @@ function Set-ComputeServerAdministratorPassword{
         [Parameter (Mandatory=$False)][string] $RegionOverride
         )
 
-    Get-CloudAccount($Account)
+    $ComputeServersProvider = Get-ComputeProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Servers Provider
-        $ComputeServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -129,8 +156,7 @@ function Set-ComputeServerAdministratorPassword{
         Write-Debug -Message "ServerId......: $ServerId" 
         Write-Debug -Message "Password......: $Password" 
 
-
-        $ComputeServersProvider.ChangeAdministratorPassword($ServerId, $Password, $Region, $cloudId)
+        $ComputeServersProvider.ChangeAdministratorPassword($ServerId, $Password, $Region, $Null)
 
     }
     catch {
@@ -176,18 +202,11 @@ function New-ComputeServerImage{
         [Parameter (Mandatory=$False)][string]    $RegionOverride
         )
 
-            
-    Get-CloudAccount($Account)
+    $ComputeServersProvider = Get-ComputeProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
-
-    $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-    # Get Cloud Servers Provider
-    $ComputeServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
-
 
     # Use Region code associated with Account, or was an override provided?
     if ($RegionOverride) {
@@ -196,7 +215,6 @@ function New-ComputeServerImage{
         $Region = $Credentials.Region
     }
 
-
     # DEBUGGING
     Write-Debug -Message "New-ComputeServerImage"        
     Write-Debug -Message "Account...: $Account"     
@@ -204,11 +222,9 @@ function New-ComputeServerImage{
     Write-Debug -Message "ImageName.: $ImageName"
     Write-Debug -Message "Metadata..: $Metadata"
     Write-Debug -Message "Region....: $Region"
-
-
             
     # Create a Server Image
-    $ComputeServersProvider.CreateImage($ServerId, $ImageName, $Metadata, $Region, $cloudId)
+    $ComputeServersProvider.CreateImage($ServerId, $ImageName, $Metadata, $Region, $Null)
 
 <#
  .SYNOPSIS
@@ -266,14 +282,7 @@ function Get-ComputeServerVolumeDetails{
         [Parameter (Mandatory=$False)][string] $RegionOverride
         )
 
-    Get-CloudAccount($Account)
-
-    # Get Identity Provider
-    $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-    # Get Cloud Servers Provider
-    $ComputeServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
-
+    $ComputeServersProvider = Get-ComputeProvider -Account $Account
 
     # Use Region code associated with Account, or was an override provided?
     if ($RegionOverride) {
@@ -281,7 +290,6 @@ function Get-ComputeServerVolumeDetails{
     } else {
         $Region = $Credentials.Region
     }
-
 
     # DEBUGGING   
     Write-Debug -Message "Get-ComputeServerVolumeDetails"
@@ -291,7 +299,7 @@ function Get-ComputeServerVolumeDetails{
 
             
     # Get the addresses
-    $ComputeServersProvider.GetServerVolumeDetails($ServerId, $VolumeId, $Region, $cloudId)
+    $ComputeServersProvider.GetServerVolumeDetails($ServerId, $VolumeId, $Region, $Null)
 
 
 <#
@@ -333,14 +341,7 @@ function Get-ComputeServerAddresses{
         [Parameter (Mandatory=$False)][string] $ServerId
     )
 
-    Get-CloudAccount($Account)
-
-    # Get Identity Provider
-    $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-    # Get Cloud Servers Provider
-    $ComputeServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
-
+    $ComputeServersProvider = Get-ComputeProvider -Account $Account
 
     # Use Region code associated with Account, or was an override provided?
     if ($RegionOverride) {
@@ -357,7 +358,7 @@ function Get-ComputeServerAddresses{
 
             
     # Get the addresses
-    $ComputeServersProvider.ListAddresses($ServerId, $Region, $cloudId)
+    $ComputeServersProvider.ListAddresses($ServerId, $Region, $Null)
 
 
 <#
@@ -419,14 +420,7 @@ function Update-ComputeServer{
         [Parameter (Mandatory=$False)][string] $AccessIPv6
     )
 
-    Get-CloudAccount($Account)
-
-    # Get Identity Provider
-    $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-    # Get Cloud Servers Provider
-    $ComputeServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
-
+    $ComputeServersProvider = Get-ComputeProvider -Account $Account
 
     # Use Region code associated with Account, or was an override provided?
     if ($RegionOverride) {
@@ -446,7 +440,7 @@ function Update-ComputeServer{
 
             
     # Update the Server
-    $ComputeServersProvider.UpdateServer($ServerId, $ServerName, $AccessIPv4, $AccessIPv6, $Region, $cloudId)
+    $ComputeServersProvider.UpdateServer($ServerId, $ServerName, $AccessIPv4, $AccessIPv6, $Region, $Null)
 
 
 <#
@@ -506,19 +500,13 @@ function Get-ComputeServerFlavors {
         [Parameter (Mandatory=$False)][switch] $Details
     )
 
-    Get-CloudAccount($Account)
+    $ComputeServersProvider = Get-ComputeProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Servers Provider
-        $ComputeServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -531,20 +519,17 @@ function Get-ComputeServerFlavors {
         Write-Debug -Message "Get-ComputeServerFlavors"     
         Write-Debug -Message "Details.......: $Details"
         Write-Debug -Message "Account.......: $Account" 
-        Write-Debug -Message "RegionOverride: $RegionOverride" 
+        Write-Debug -Message "Region........: $Region" 
         Write-Debug -Message "MinDiskInGB...: $MinDiskInGB" 
         Write-Debug -Message "MinRamInMB....: $MinRamInMB" 
         Write-Debug -Message "MarkerId......: $MarkerId" 
         Write-Debug -Message "Limit.........: $Limit"  
 
-
-
-
         # Get the list of Flavors
         if ($Details) {
-            $FlavorList = $ComputeServersProvider.ListFlavorsWithDetails($MinDiskInGB, $MinRamInMB, $MarkerId, $Limit, $Region, $cloudId)
+            $FlavorList = $ComputeServersProvider.ListFlavorsWithDetails($MinDiskInGB, $MinRamInMB, $MarkerId, $Limit, $Region, $null)
         } else {
-            $FlavorList = $ComputeServersProvider.ListFlavors($MinDiskInGB, $MinRamInMB, $MarkerId, $Limit, $Region, $cloudId)
+            $FlavorList = $ComputeServersProvider.ListFlavors($MinDiskInGB, $MinRamInMB, $MarkerId, $Limit, $Region, $null)
         }
 
 
@@ -622,20 +607,13 @@ function Get-ComputeServerImages {
         [Parameter (Mandatory=$False)][switch] $Details
     )
 
-    Get-CloudAccount($Account)
+    $ComputeServersProvider = Get-ComputeProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-            # Get Identity Provider
-            $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-            # Get Cloud Servers Provider
-            $ComputeServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
-
-
             # Use Region code associated with Account, or was an override provided?
             if ($RegionOverride)
             {
@@ -644,10 +622,9 @@ function Get-ComputeServerImages {
                 $Region = $Credentials.Region
             }
 
-
-
             # DEBUGGING             
             Write-Debug -Message "Get-ComputeServerImages"
+            Write-Debug -Message "Account..........: $Account"
             Write-Debug -Message "Details..........: $Details"
             Write-Debug -Message "Server...........: $Server"
             Write-Debug -Message "ImageName........: $ImageName"
@@ -659,13 +636,10 @@ function Get-ComputeServerImages {
             Write-Debug -Message "Region...........: $Region"
 
            
-            $Region = $Region
-            
-
             if ($Details) {
-                $ImageList = $ComputeServersProvider.ListImagesWithDetails($Server, $ImageName, $ImageStatus, $ChangesSince, $MarkerId, $Limit, $ImageType, $Region, $cloudId)
+                $ImageList = $ComputeServersProvider.ListImagesWithDetails($Server, $ImageName, $ImageStatus, $ChangesSince, $MarkerId, $Limit, $ImageType, $Region, $Null)
             } else {
-                $ImageList = $ComputeServersProvider.ListImages($Server, $ImageName, $ImageStatus, $ChangesSince, $MarkerId, $Limit, $ImageType, $Region, $cloudId)
+                $ImageList = $ComputeServersProvider.ListImages($Server, $ImageName, $ImageStatus, $ChangesSince, $MarkerId, $Limit, $ImageType, $Region, $Null)
             }
 
 
@@ -743,30 +717,24 @@ function Get-ComputeServers{
 
     Param(
         [Parameter (Mandatory=$True)] [string]$Account,
-        [Parameter (Mandatory=$False)][string]$RegionOverride,
-        [Parameter (Mandatory=$False)][string]$ImageId,
-        [Parameter (Mandatory=$False)][string]$FlavorId,
-        [Parameter (Mandatory=$False)][string]$ServerName,
-        [Parameter (Mandatory=$False)][object]$ServerState,
-        [Parameter (Mandatory=$False)][string]$MarkerId,
+        [Parameter (Mandatory=$False)][string]$RegionOverride = $Null,
+        [Parameter (Mandatory=$False)][string]$ImageId = $Null,
+        [Parameter (Mandatory=$False)][string]$FlavorId = $Null,
+        [Parameter (Mandatory=$False)][string]$ServerName = $null,
+        [Parameter (Mandatory=$False)][object]$ServerState = $Null,
+        [Parameter (Mandatory=$False)][string]$MarkerId = $Null,
         [Parameter (Mandatory=$False)][int]   $Limit = 10000,
-        [Parameter (Mandatory=$False)][object]$ChangesSince,
+        [Parameter (Mandatory=$False)][object]$ChangesSince = $Null,
         [Parameter (Mandatory=$False)][switch]$Details
     )
 
-    Get-CloudAccount($Account)
+    $ComputeServersProvider = Get-ComputeProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-            # Get Identity Provider
-            $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-            # Get Cloud Servers Provider
-            $ComputeServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
-
 
             # Use Region code associated with Account, or was an override provided?
             if ($RegionOverride)
@@ -775,9 +743,6 @@ function Get-ComputeServers{
             } else {
                 $Region = $Credentials.Region
             }
-
-
-
 
             # DEBUGGING        
             Write-Debug -Message "Get-ComputeServers"  
@@ -794,9 +759,9 @@ function Get-ComputeServers{
 
             # Get the list of servers
             if ($Details) {
-                $ServerList = $ComputeServersProvider.ListServersWithDetails($ImageId, $FlavorId, $ServerName, $ServerState, $MarkerId, $Limit, $ChangesSince, $Region, $cloudId)
+                $ServerList = $ComputeServersProvider.ListServersWithDetails($ImageId, $FlavorId, $ServerName, $ServerState, $MarkerId, $Limit, $ChangesSince, $Region, $Null)
             } else {
-                $ServerList = $ComputeServersProvider.ListServers($ImageId, $FlavorId, $ServerName, $ServerState, $MarkerId, $Limit, $ChangesSince, $Region, $cloudId)
+                $ServerList = $ComputeServersProvider.ListServers($ImageId, $FlavorId, $ServerName, $ServerState, $MarkerId, $Limit, $ChangesSince, $Region, $null)
             }
 
 
@@ -876,18 +841,11 @@ function Get-ComputeServerDetails {
         [Parameter(Mandatory=$False)][string]$RegionOverride
     )
 
-    Get-CloudAccount($Account)
+    $ComputeServersProvider = Get-ComputeProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
-
-    # Get Identity Provider
-    $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-    # Get Cloud Servers Provider
-    $ComputeServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
-
 
     # Use Region code associated with Account, or was an override provided?
     if ($RegionOverride) {
@@ -895,7 +853,6 @@ function Get-ComputeServerDetails {
     } else {
         $Region = $Credentials.Region
     }
-
 
     # DEBUGGING        
     Write-Debug -Message "Get-ComputeServerDetails"     
@@ -905,7 +862,7 @@ function Get-ComputeServerDetails {
 
 
     # Get the Server details
-    $ComputeServersProvider.GetDetails($ServerId, $Region, $cloudId)
+    $ComputeServersProvider.GetDetails($ServerId, $Region, $Null)
 
 <#
  .SYNOPSIS
@@ -968,18 +925,11 @@ function Get-ComputeServerVolumes {
         [Parameter (Mandatory=$False)][string] $RegionOverride
     )
 
-    Get-CloudAccount($Account)
+    $ComputeServersProvider = Get-ComputeProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
-
-    # Get Identity Provider
-    $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-    # Get Cloud Servers Provider
-    $ComputeServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
-
 
     # Use Region code associated with Account, or was an override provided?
     if ($RegionOverride) {
@@ -988,7 +938,6 @@ function Get-ComputeServerVolumes {
         $Region = $Credentials.Region
     }
 
-
     # DEBUGGING             
     Write-Debug -Message "Account.: $Account"
     Write-Debug -Message "ServerId: $ServerId"
@@ -996,7 +945,7 @@ function Get-ComputeServerVolumes {
 
 
     # Get the list of servers
-    $ComputeServersProvider.ListServerVolumes($ServerId, $Region, $cloudId)
+    $ComputeServersProvider.ListServerVolumes($ServerId, $Region, $Null)
 
 <#
  .SYNOPSIS
@@ -1057,18 +1006,12 @@ function New-ComputeServer {
         [Parameter(Mandatory=$false)][ValidateCount(0,5)][string[]]$PersonalityFile,
         [Parameter(Mandatory=$false)][string]$RegionOverride
     )
-            
-    Get-CloudAccount($Account)
+
+    $ComputeServersProvider = Get-ComputeProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
-
-    $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-    # Get Cloud Servers Provider
-    $ComputeServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
-
 
     # Use Region code associated with Account, or was an override provided?
     if ($RegionOverride) {
@@ -1076,7 +1019,6 @@ function New-ComputeServer {
     } else {
         $Region = $Credentials.Region
     }
-
 
     # DEBUGGING
     Write-Debug -Message "New-ComputeServer"        
@@ -1094,8 +1036,7 @@ function New-ComputeServer {
 
             
     # Create a Server
-    $ComputeServersProvider.CreateServer($ServerName, $ImageId, $FlavorId, $DiskConfig, $Metadata, $null, $AttachToServiceNetwork, $AttachToPublicNetwork, $Networks, $Region, $cloudId)
-    #$newServer | Format-Table Id, AdminPassword
+    $ComputeServersProvider.CreateServer($ServerName, $ImageId, $FlavorId, $DiskConfig, $Metadata, $null, $AttachToServiceNetwork, $AttachToPublicNetwork, $Networks, $Region, $Null)
 
 <#
  .SYNOPSIS
@@ -1165,14 +1106,7 @@ function Remove-ComputeServer{
         [Parameter(Mandatory=$false)][string]$RegionOverride
         )
 
-    Get-CloudAccount($Account)
-
-    # Get Identity Provider
-    $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-    # Get Cloud Servers Provider
-    $ComputeServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
-
+    $ComputeServersProvider = Get-ComputeProvider -Account $Account
 
     # Use Region code associated with Account, or was an override provided?
     if ($RegionOverride)
@@ -1182,13 +1116,12 @@ function Remove-ComputeServer{
         $Region = $Credentials.Region
     }
 
-
     # DEBUGGING             
     Write-Debug -Message "ServerId: $ServerId"
     Write-Debug -Message "Region..: $Region"
           
     # Delete the Server
-    $ComputeServersProvider.DeleteServer($ServerId, $Region, $cloudId)
+    $ComputeServersProvider.DeleteServer($ServerId, $Region, $Null)
 
 <#
  .SYNOPSIS
@@ -1231,14 +1164,7 @@ function Restart-ComputeServer{
         [Parameter(Mandatory=$False)][string]$RegionOverride
         )
 
-    Get-CloudAccount($Account)
-
-    # Get Identity Provider
-    $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-    # Get Cloud Servers Provider
-    $ComputeServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
-
+    $ComputeServersProvider = Get-ComputeProvider -Account $Account
 
     # Use Region code associated with Account, or was an override provided?
     if ($RegionOverride)
@@ -1256,7 +1182,7 @@ function Restart-ComputeServer{
 
             
     # Reboot the Server
-    $ComputeServersProvider.RebootServer($ServerId, $RebootType, $Region, $cloudId)
+    $ComputeServersProvider.RebootServer($ServerId, $RebootType, $Region, $Null)
 
 <#
  .SYNOPSIS
@@ -1310,14 +1236,7 @@ function Initialize-ComputeServer{
         [Parameter(Mandatory=$False)][string] $RegionOverride
         )
 
-    Get-CloudAccount($Account)
-
-    # Get Identity Provider
-    $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-    # Get Cloud Servers Provider
-    $ComputeServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
-
+    $ComputeServersProvider = Get-ComputeProvider -Account $Account
 
     # Use Region code associated with Account, or was an override provided?
     if ($RegionOverride) {
@@ -1343,7 +1262,7 @@ function Initialize-ComputeServer{
 
             
     # Delete the Server
-    $ComputeServersProvider.RebuildServer($ServerId, $ServerName, $ImageId, $FlavorId, $AdminPassword, $AccessIPv4, $AccessIPv6, $Metadata, $DiskConfig, $Personality, $Region, $cloudId)
+    $ComputeServersProvider.RebuildServer($ServerId, $ServerName, $ImageId, $FlavorId, $AdminPassword, $AccessIPv4, $AccessIPv6, $Metadata, $DiskConfig, $Personality, $Region, $Null)
 
 <#
  .SYNOPSIS
@@ -1416,14 +1335,7 @@ function Resize-ComputeServer{
         [Parameter(Mandatory=$False)][string]$RegionOverride
         )
 
-    Get-CloudAccount($Account)
-
-    # Get Identity Provider
-    $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-    # Get Cloud Servers Provider
-    $ComputeServersProvider = New-Object net.openstack.Providers.Rackspace.CloudServersProvider
-
+    $ComputeServersProvider = Get-ComputeProvider -Account $Account
 
     # Use Region code associated with Account, or was an override provided?
     if ($RegionOverride) {
@@ -1443,7 +1355,7 @@ function Resize-ComputeServer{
 
             
     # Delete the Server
-    $ComputeServersProvider.ResizeServer($ServerId, $ServerName, $FlavorId, $DiskConfig, $Region, $cloudId)
+    $ComputeServersProvider.ResizeServer($ServerId, $ServerName, $FlavorId, $DiskConfig, $Region, $Null)
 
 <#
  .SYNOPSIS
@@ -1479,5 +1391,4 @@ function Resize-ComputeServer{
  http://docs.rackspace.com/servers/api/v2/cs-devguide/content/Resize_Server-d1e3707.html
 
 #>
-
 }

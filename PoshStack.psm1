@@ -13,7 +13,6 @@ Description
 ############################################################################################>
 
 # Cloud account configuration file
-#$Global:PowerNovaConfFile = $env:LOCALAPPDATA + "\PowerNova\CloudAccounts.csv"
 $Global:PoshStackConfigFile = $env:USERPROFILE + "\Documents\WindowsPowerShell\Modules\PoshStack\CloudAccounts.csv" 
 
 ############################################################################################
@@ -24,7 +23,7 @@ $Global:PoshStackConfigFile = $env:USERPROFILE + "\Documents\WindowsPowerShell\M
 #
 ############################################################################################
 
-function Get-CloudIdentityProvider{
+function Get-CloudIdentityProvider {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory=$True)][string] $Username = $(throw "Please specify required Username with -Username parameter"),
@@ -39,6 +38,24 @@ function Get-CloudIdentityProvider{
     Return $cloudId
 }
 
+function Get-CloudIdentityProviderOpenStack {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$True)][string] $Username = $(throw "Please specify required Username with -Username parameter"),
+        [Parameter(Mandatory=$True)][string] $Password = $(throw "Please specify required Password with -Password parameter"),
+        [Parameter(Mandatory=$True)][net.openstack.Core.Domain.ProjectId] $ProjectId = $(throw "Please specify required ProjectId with -ProjectId parameter"),
+        [Parameter(Mandatory=$True)][System.Uri] $Uri = $(throw "Please specify required Identity Endpoint Uri with -Uri parameter")
+    )
+
+    $CloudIdentityWithProject = New-Object net.openstack.Core.Domain.CloudIdentityWithProject
+    $CloudIdentityWithProject.Password = $Password
+    $CloudIdentityWithProject.Username = $Username
+    $CloudIdentityWithProject.ProjectId = $ProjectId
+            
+    New-Object net.openstack.Core.Providers.OpenStackIdentityProvider($Uri, $CloudIdentityWithProject)
+
+}
+
 function Get-CloudAccount {
     <#
     Read $Global:PoshStackConfigFile then populate global account variables 
@@ -47,26 +64,19 @@ function Get-CloudAccount {
 
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$True)][string] $account = $(throw "Please specify required Cloud Account with -account parameter")
+        [Parameter(Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account by using the -Account parameter")
     )
-
-    # Valid DC regions
-    $ValidRegions = @("lon","ord","dfw","iad","hkg","syd")
 
     try {
         # Search $ConfigFile file for $account entry and populate temporary $conf with relevant details
         $Global:Credentials = Import-Csv $PoshStackConfigFile | Where-Object {$_.AccountName -eq $Account}
         
+
         # Raise exception if specified $account is not found in conf file
         if ($Credentials.AccountName -eq $null) {
-            throw "Get-CloudAccount: `"$account`" account is not defined in the configuration file"
+            throw "Get-CloudAccount: Account `"$account`"  is not defined in the configuration (CloudAccounts.csv) file"
         }
 
-        # Raise exception if specified DC is not supported
-        if ($ValidRegions –notcontains $Credentials.Region) {
-            $reg = $Credentials.Region
-            throw "Get-CloudAccount: The `"$reg`" region specified in the configuration file is not valid"
-        }
     }
     catch {
         Invoke-Exception($_.Exception)

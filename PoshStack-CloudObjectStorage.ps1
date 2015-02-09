@@ -10,6 +10,42 @@ Description
 
 ############################################################################################>
 
+function Get-CloudObjectStorageProvider {
+    Param(
+        [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required Cloud Account with -Account parameter")
+        )
+
+    # The Account comes from the file CloudAccounts.csv
+    # It has information regarding credentials and the type of provider (Generic or Rackspace)
+
+    Get-CloudAccount -Account $Account
+
+    # Is this Rackspace or Generic OpenStack?
+    switch ($Credentials.Type)
+    {
+        "Rackspace" {
+            # Get Identity Provider
+            $cloudId    = New-Object net.openstack.Core.Domain.CloudIdentity
+            $cloudId.Username = $Credentials.CloudUsername
+            $cloudId.APIKey   = $Credentials.CloudAPIKey
+            $Global:CloudId = New-Object net.openstack.Providers.Rackspace.CloudIdentityProvider($cloudId)
+            Return New-Object net.openstack.Providers.Rackspace.CloudFilesProvider($cloudId)
+        }
+        "OpenStack" {
+            $CloudIdentityWithProject = New-Object net.openstack.Core.Domain.CloudIdentityWithProject
+            $CloudIdentityWithProject.Password = $Credentials.CloudPassword
+            $CloudIdentityWithProject.Username = $Credentials.CloudUsername
+            $CloudIdentityWithProject.ProjectId = New-Object net.openstack.Core.Domain.ProjectId($Credentials.TenantId)
+            $CloudIdentityWithProject.ProjectName = $Credentials.TenantId
+            $Uri = New-Object System.Uri($Credentials.IdentityEndpointUri)
+            $OpenStackIdentityProvider = New-Object net.openstack.Core.Providers.OpenStackIdentityProvider($Uri, $CloudIdentityWithProject)
+            Return New-Object net.openstack.Providers.Rackspace.CloudFilesProvider($Null, $OpenStackIdentityProvider)
+        }
+    }
+
+}
+
+
 #CopyStream
 
 #BulkDelete **TODO**
@@ -23,19 +59,13 @@ function Remove-CloudObjectStorageObjects{
         [Parameter (Mandatory=$False)][string] $RegionOverride = $Null
     )
 
-    Get-CloudAccount($Account)
+    $CloudObjectStorageProvider = Get-CloudObjectStorageProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Servers Provider
-        $CloudObjectStorageProvider = New-Object net.openstack.Providers.Rackspace.CloudFilesProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -108,7 +138,7 @@ function Remove-CloudObjectStorageObjects{
         $Foo = New-Object 'System.Collections.Generic.Dictionary[String,String]'
         #$Foo.Add("Container1","book.docx")
         $Foo.Add("Container1","amen_main.html")
-        $CloudObjectStorageProvider.BulkDelete($Foo, $hdr, $Region, $UseInternalUrl, $cloudId)
+        $CloudObjectStorageProvider.BulkDelete($Foo, $hdr, $Region, $UseInternalUrl, $Null)
         #$CloudObjectStorageProvider.BulkDelete($ItemsArray, $hdr, $Region, $UseInternalUrl, $cloudId)
 
     }
@@ -172,19 +202,13 @@ function New-CloudObjectStorageContainer{
         [Parameter (Mandatory=$False)][string]    $RegionOverride
         )
 
-    Get-CloudAccount($Account)
+    $CloudObjectStorageProvider = Get-CloudObjectStorageProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Servers Provider
-        $CloudObjectStorageProvider = New-Object net.openstack.Providers.Rackspace.CloudFilesProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -201,7 +225,7 @@ function New-CloudObjectStorageContainer{
         Write-Debug -Message "UseInternalUrl: $UseInternalUrl" 
 
 
-        return $CloudObjectStorageProvider.CreateContainer($ContainerName, $Headers, $Region, $UseInternalUrl, $cloudId)
+        return $CloudObjectStorageProvider.CreateContainer($ContainerName, $Headers, $Region, $UseInternalUrl, $Null)
 
     }
     catch {
@@ -270,19 +294,13 @@ function Add-CloudObjectStorageObjectFromFile{
         [Parameter (Mandatory=$False)][string]    $RegionOverride
         )
 
-    Get-CloudAccount($Account)
+    $CloudObjectStorageProvider = Get-CloudObjectStorageProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Servers Provider
-        $CloudObjectStorageProvider = New-Object net.openstack.Providers.Rackspace.CloudFilesProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -305,7 +323,7 @@ function Add-CloudObjectStorageObjectFromFile{
         Write-Debug -Message "Headers.......: $Headers"
 
         
-        $CloudObjectStorageProvider.CreateObjectFromFile($ContainerName, $FilePath, $ObjectName, $ContentType, $ChunkSize, $Headers, $Region, $null, $UseInternalUrl, $cloudId)
+        $CloudObjectStorageProvider.CreateObjectFromFile($ContainerName, $FilePath, $ObjectName, $ContentType, $ChunkSize, $Headers, $Region, $null, $UseInternalUrl, $Null)
 
     }
     catch {
@@ -368,19 +386,13 @@ function Remove-CloudObjectStorageContainer{
         [Parameter (Mandatory=$False)][string] $RegionOverride
         )
 
-    Get-CloudAccount($Account)
+    $CloudObjectStorageProvider = Get-CloudObjectStorageProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Servers Provider
-        $CloudObjectStorageProvider = New-Object net.openstack.Providers.Rackspace.CloudFilesProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -399,7 +411,7 @@ function Remove-CloudObjectStorageContainer{
         Write-Debug -Message "DeleteObjects.: $DeleteObjects"
 
         
-        $CloudObjectStorageProvider.DeleteContainer($ContainerName, $DeleteObjects, $Region, $UseInternalUrl, $cloudId)
+        $CloudObjectStorageProvider.DeleteContainer($ContainerName, $DeleteObjects, $Region, $UseInternalUrl, $Null)
 
     }
     catch {
@@ -457,19 +469,13 @@ function Remove-CloudObjectStorageObject{
         [Parameter (Mandatory=$False)][string] $RegionOverride = $Null
     )
 
-    Get-CloudAccount($Account)
+    $CloudObjectStorageProvider = Get-CloudObjectStorageProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Servers Provider
-        $CloudObjectStorageProvider = New-Object net.openstack.Providers.Rackspace.CloudFilesProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -488,7 +494,7 @@ function Remove-CloudObjectStorageObject{
         Write-Debug -Message "DeleteSegments: $DeleteSegments"
         Write-Debug -Message "UseInternalUrl: $UseInternalUrl" 
 
-        $CloudObjectStorageProvider.DeleteObject($ContainerName, $ObjectName, $Headers, $DeleteSegments, $Region, $UseInternalUrl, $cloudId)
+        $CloudObjectStorageProvider.DeleteObject($ContainerName, $ObjectName, $Headers, $DeleteSegments, $Region, $UseInternalUrl, $Null)
 
     }
     catch {
@@ -554,19 +560,13 @@ function Enable-CloudObjectStorageContainerCDN{
         [Parameter (Mandatory=$False)][string]    $RegionOverride
         )
 
-    Get-CloudAccount($Account)
+    $CloudObjectStorageProvider = Get-CloudObjectStorageProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Servers Provider
-        $CloudObjectStorageProvider = New-Object net.openstack.Providers.Rackspace.CloudFilesProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -583,7 +583,7 @@ function Enable-CloudObjectStorageContainerCDN{
         Write-Debug -Message "LogRetention..: $LogRetention" 
 
 
-        return $CloudObjectStorageProvider.EnableCDNOnContainer($ContainerName, $LogRetention, $Region, $cloudId)
+        return $CloudObjectStorageProvider.EnableCDNOnContainer($ContainerName, $LogRetention, $Region, $Null)
 
     }
     catch {
@@ -694,19 +694,13 @@ function Copy-CloudObjectStorageObjectToFile{
         [Parameter (Mandatory=$False)][bool]   $UseInternalUrl = $False
     )
 
-    Get-CloudAccount($Account)
+    $CloudObjectStorageProvider = Get-CloudObjectStorageProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Servers Provider
-        $CloudObjectStorageProvider = New-Object net.openstack.Providers.Rackspace.CloudFilesProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -729,7 +723,7 @@ function Copy-CloudObjectStorageObjectToFile{
         Write-Debug -Message "ProgressUpdated: $ProgressUpdated" 
         Write-Debug -Message "UseInternalUrl.: $UseInternalUrl" 
 
-        $CloudObjectStorageProvider.GetObjectSaveToFile($ContainerName, $SaveDirectory, $ObjectName, $FileName, $ChunkSize, $Headers, $Region, $VerifyETag, $ProgressUpdated, $UseInternalUrl, $cloudId)
+        $CloudObjectStorageProvider.GetObjectSaveToFile($ContainerName, $SaveDirectory, $ObjectName, $FileName, $ChunkSize, $Headers, $Region, $VerifyETag, $ProgressUpdated, $UseInternalUrl, $Null)
         #$CloudObjectStorageProvider.GetObjectSaveToFile("Container1", "C:\Temp", "iChats", $Null, 65536, $Null, "ORD", $Null, $null, $null, $cloudId)
 
     }
@@ -804,19 +798,13 @@ function Get-CloudObjectStorageContainers{
         [Parameter (Mandatory=$False)][string] $RegionOverride = $Null
     )
 
-    Get-CloudAccount($Account)
+    $CloudObjectStorageProvider = Get-CloudObjectStorageProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Servers Provider
-        $CloudObjectStorageProvider = New-Object net.openstack.Providers.Rackspace.CloudFilesProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -834,9 +822,9 @@ function Get-CloudObjectStorageContainers{
         Write-Debug -Message "UseInternalUrl: $UseInternalUrl" 
         
         If ($CDN) {
-            Return $CloudObjectStorageProvider.ListCDNContainers($Limit, $Marker, $MarkerEnd, $True, $Region, $cloudId)
+            Return $CloudObjectStorageProvider.ListCDNContainers($Limit, $Marker, $MarkerEnd, $True, $Region, $Null)
         } else {
-            Return $CloudObjectStorageProvider.ListContainers($Limit, $Marker, $MarkerEnd, $Region, $UseInternalUrl, $cloudId)
+            Return $CloudObjectStorageProvider.ListContainers($Limit, $Marker, $MarkerEnd, $Region, $UseInternalUrl, $Null)
         }
 
     }
@@ -894,19 +882,13 @@ function Get-CloudObjectStorageObjects{
         [Parameter (Mandatory=$False)][string] $RegionOverride = $Null
     )
 
-    Get-CloudAccount($Account)
+    $CloudObjectStorageProvider = Get-CloudBlockStorageProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Servers Provider
-        $CloudObjectStorageProvider = New-Object net.openstack.Providers.Rackspace.CloudFilesProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -925,7 +907,7 @@ function Get-CloudObjectStorageObjects{
         Write-Debug -Message "RegionOverride: $RegionOverride" 
         Write-Debug -Message "UseInternalUrl: $UseInternalUrl" 
         
-        $ListOfObjects = $CloudObjectStorageProvider.ListObjects($Container, $Limit, $Marker, $MarkerEnd, $Prefix, $Region, $UseInternalUrl, $cloudId)
+        $ListOfObjects = $CloudObjectStorageProvider.ListObjects($Container, $Limit, $Marker, $MarkerEnd, $Prefix, $Region, $UseInternalUrl, $Null)
         foreach ($cloudObject in $ListOfObjects) {
             Add-Member -InputObject $cloudObject -MemberType NoteProperty -Name Region -Value $Region
             Add-Member -InputObject $cloudObject -MemberType NoteProperty -Name Container -Value $Container

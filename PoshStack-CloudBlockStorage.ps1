@@ -10,6 +10,41 @@ Description
 
 ############################################################################################>
 
+function Get-CloudBlockStorageProvider {
+    Param(
+        [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required Cloud Account with -Account parameter")
+        )
+
+    # The Account comes from the file CloudAccounts.csv
+    # It has information regarding credentials and the type of provider (Generic or Rackspace)
+
+    Get-CloudAccount -Account $Account
+
+    # Is this Rackspace or Generic OpenStack?
+    switch ($Credentials.Type)
+    {
+        "Rackspace" {
+            # Get Identity Provider
+            $cloudId    = New-Object net.openstack.Core.Domain.CloudIdentity
+            $cloudId.Username = $Credentials.CloudUsername
+            $cloudId.APIKey   = $Credentials.CloudAPIKey
+            $Global:CloudId = New-Object net.openstack.Providers.Rackspace.CloudIdentityProvider($cloudId)
+            Return New-Object net.openstack.Providers.Rackspace.CloudBlockStorageProvider($cloudId)
+        }
+        "OpenStack" {
+            $CloudIdentityWithProject = New-Object net.openstack.Core.Domain.CloudIdentityWithProject
+            $CloudIdentityWithProject.Password = $Credentials.CloudPassword
+            $CloudIdentityWithProject.Username = $Credentials.CloudUsername
+            $CloudIdentityWithProject.ProjectId = New-Object net.openstack.Core.Domain.ProjectId($Credentials.TenantId)
+            $CloudIdentityWithProject.ProjectName = $Credentials.TenantId
+            $Uri = New-Object System.Uri($Credentials.IdentityEndpointUri)
+            $OpenStackIdentityProvider = New-Object net.openstack.Core.Providers.OpenStackIdentityProvider($Uri, $CloudIdentityWithProject)
+            Return New-Object net.openstack.Providers.Rackspace.CloudBlockStorageProvider($Null, $OpenStackIdentityProvider)
+        }
+    }
+
+}
+
 #Issue #6 New-CloudBlockStorageSnapshot
 function New-CloudBlockStorageSnapshot {
     Param(
@@ -21,19 +56,13 @@ function New-CloudBlockStorageSnapshot {
         [Parameter (Mandatory=$False)][string] $RegionOverride = $Null
     )
 
-    Get-CloudAccount($Account)
+    $CloudBlockStorageProvider = Get-CloudBlockStorageProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Block Storage Provider
-        $CloudBlockStorageProvider = New-Object net.openstack.Providers.Rackspace.CloudBlockStorageProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -51,7 +80,7 @@ function New-CloudBlockStorageSnapshot {
         Write-Debug -Message "DisplayName.......: $DisplayName" 
         Write-Debug -Message "DisplayDescription: $DisplayDescription" 
 
-        $CloudBlockStorageProvider.CreateSnapshot($VolumeId, $Force, $DisplayName, $DisplayDescription, $RegionOverride, $cloudId)
+        $CloudBlockStorageProvider.CreateSnapshot($VolumeId, $Force, $DisplayName, $DisplayDescription, $RegionOverride, $null)
 
 
     }
@@ -97,27 +126,21 @@ function New-CloudBlockStorageSnapshot {
 function New-CloudBlockStorageVolume {
     Param(
         [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required Cloud Account with -Account parameter"),
-        [Parameter (Mandatory=$True)] [int]    $Size = $(throw "Pleaes specify the required size (in GB) with the -Size parameter"),
-        [Parameter (Mandatory=$False)][string] $DisplayDescription = $Null,
-        [Parameter (Mandatory=$False)][string] $DisplayName = $Null,
-        [Parameter (Mandatory=$False)][string] $SnapshotId = $Null,
-        [Parameter (Mandatory=$False)][string] $VolumeType = $Null,
-        [Parameter (Mandatory=$False)][string] $RegionOverride = $Null
+        [Parameter (Mandatory=$True)] [int]    $Size = $(throw "Please specify the required size (in GB, from 100 to 1000) with the -Size parameter"),
+        [Parameter (Mandatory=$False)][string] $DisplayDescription,
+        [Parameter (Mandatory=$False)][string] $DisplayName,
+        [Parameter (Mandatory=$False)][string] $SnapshotId,
+        [Parameter (Mandatory=$False)][string] $VolumeType,
+        [Parameter (Mandatory=$False)][string] $RegionOverride
     )
 
-    Get-CloudAccount($Account)
+    $CloudBlockStorageProvider = Get-CloudBlockStorageProvider -Account $Account 
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
-    }
+    } 
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Block Storage Provider
-        $CloudBlockStorageProvider = New-Object net.openstack.Providers.Rackspace.CloudBlockStorageProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -133,9 +156,9 @@ function New-CloudBlockStorageVolume {
         Write-Debug -Message "DisplayName.......: $DisplayName" 
         Write-Debug -Message "SnapshotId........: $SnapshotId" 
         Write-Debug -Message "VolumeType........: $VolumeType" 
-        Write-Debug -Message "RegionOverride....: $RegionOverride" 
+        Write-Debug -Message "Region............: $Region" 
 
-        $CloudBlockStorageProvider.CreateVolume($Size, $DisplayDescription, $DisplayName, $SnapshotId, $VolumeType, $RegionOverride, $cloudId)
+        $CloudBlockStorageProvider.CreateVolume($Size, $DisplayDescription, $DisplayName, $SnapshotId, $VolumeType, $Region, $Null)
 
     }
     catch {
@@ -187,19 +210,13 @@ function Remove-CloudBlockStorageSnapshot {
         [Parameter (Mandatory=$False)][string] $RegionOverride = $Null
     )
 
-    Get-CloudAccount($Account)
+    $CloudBlockStorageProvider = Get-CloudBlockStorageProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Block Storage Provider
-        $CloudBlockStorageProvider = New-Object net.openstack.Providers.Rackspace.CloudBlockStorageProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -213,7 +230,7 @@ function Remove-CloudBlockStorageSnapshot {
         Write-Debug -Message "SnapshotId....: $SnapshotId" 
         Write-Debug -Message "RegionOverride: $RegionOverride" 
 
-        $CloudBlockStorageProvider.DeleteSnapshot($SnapshotId, $Region, $cloudId)
+        $CloudBlockStorageProvider.DeleteSnapshot($SnapshotId, $Region, $null)
 
     }
     catch {
@@ -254,19 +271,13 @@ function Remove-CloudBlockStorageVolume {
         [Parameter (Mandatory=$False)][string] $RegionOverride = $Null
     )
 
-    Get-CloudAccount($Account)
+    $CloudBlockStorageProvider = Get-CloudBlockStorageProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Block Storage Provider
-        $CloudBlockStorageProvider = New-Object net.openstack.Providers.Rackspace.CloudBlockStorageProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -280,7 +291,7 @@ function Remove-CloudBlockStorageVolume {
         Write-Debug -Message "VolumeId......: $VolumeId" 
         Write-Debug -Message "RegionOverride: $RegionOverride" 
 
-        $CloudBlockStorageProvider.DeleteVolume($VolumeId, $Region, $cloudId)
+        $CloudBlockStorageProvider.DeleteVolume($VolumeId, $Region, $Null)
 
     }
     catch {
@@ -321,19 +332,13 @@ function Get-CloudBlockStorageVolumeTypeInfo {
         [Parameter (Mandatory=$False)][string] $RegionOverride = $Null
     )
 
-    Get-CloudAccount($Account)
+    $CloudBlockStorageProvider = Get-CloudBlockStorageProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Block Storage Provider
-        $CloudBlockStorageProvider = New-Object net.openstack.Providers.Rackspace.CloudBlockStorageProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -347,7 +352,7 @@ function Get-CloudBlockStorageVolumeTypeInfo {
         Write-Debug -Message "VolumeTypeId..: $VolumeTypeId" 
         Write-Debug -Message "RegionOverride: $RegionOverride" 
 
-        $CloudBlockStorageProvider.DescribeVolumeType($VolumeTypeId, $Region, $cloudId)
+        $CloudBlockStorageProvider.DescribeVolumeType($VolumeTypeId, $Region, $Null)
 
     }
     catch {
@@ -386,19 +391,13 @@ function Get-CloudBlockStorageSnapshots {
         [Parameter (Mandatory=$False)][string] $RegionOverride = $Null
     )
 
-    Get-CloudAccount($Account)
+    $CloudBlockStorageProvider = Get-CloudBlockStorageProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Block Storage Provider
-        $CloudBlockStorageProvider = New-Object net.openstack.Providers.Rackspace.CloudBlockStorageProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -412,7 +411,7 @@ function Get-CloudBlockStorageSnapshots {
         Write-Debug -Message "Account...........: $Account" 
         Write-Debug -Message "RegionOverride....: $RegionOverride" 
 
-        $CloudBlockStorageProvider.ListSnapshots($RegionOverride, $cloudId)
+        $CloudBlockStorageProvider.ListSnapshots($RegionOverride, $Null)
 
     }
     catch {
@@ -448,19 +447,13 @@ function Get-CloudBlockStorageVolumes {
         [Parameter (Mandatory=$False)][string] $RegionOverride = $Null
     )
 
-    Get-CloudAccount($Account)
+    $CloudBlockStorageProvider = Get-CloudBlockStorageProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Block Storage Provider
-        $CloudBlockStorageProvider = New-Object net.openstack.Providers.Rackspace.CloudBlockStorageProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -474,7 +467,7 @@ function Get-CloudBlockStorageVolumes {
         Write-Debug -Message "Account...........: $Account" 
         Write-Debug -Message "RegionOverride....: $RegionOverride" 
 
-        $CloudBlockStorageProvider.ListVolumes($RegionOverride, $cloudId)
+        $CloudBlockStorageProvider.ListVolumes($Region, $Null)
 
     }
     catch {
@@ -511,19 +504,14 @@ function Get-CloudBlockStorageVolume {
         [Parameter (Mandatory=$False)][string] $RegionOverride = $Null
     )
 
-    Get-CloudAccount($Account)
+
+    $CloudBlockStorageProvider = Get-CloudBlockStorageProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Block Storage Provider
-        $CloudBlockStorageProvider = New-Object net.openstack.Providers.Rackspace.CloudBlockStorageProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -538,7 +526,7 @@ function Get-CloudBlockStorageVolume {
         Write-Debug -Message "VolumeId..........: $VolumeId" 
         Write-Debug -Message "RegionOverride....: $RegionOverride" 
 
-        $CloudBlockStorageProvider.ShowVolume($VolumeId, $RegionOverride, $cloudId)
+        $CloudBlockStorageProvider.ShowVolume($VolumeId, $RegionOverride, $Null)
 
     }
     catch {
@@ -580,19 +568,13 @@ function Watch-CloudBlockStorageVolumeAvailable {
         [Parameter (Mandatory=$False)][string]   $RegionOverride = $Null
     )
 
-    Get-CloudAccount($Account)
+    $CloudBlockStorageProvider = Get-CloudBlockStorageProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Block Storage Provider
-        $CloudBlockStorageProvider = New-Object net.openstack.Providers.Rackspace.CloudBlockStorageProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -609,7 +591,7 @@ function Watch-CloudBlockStorageVolumeAvailable {
         Write-Debug -Message "RefreshDelay......: $RefreshDelay"
         Write-Debug -Message "RegionOverride....: $RegionOverride" 
 
-        $CloudBlockStorageProvider.WaitForVolumeAvailable($VolumeId, $RefreshCount, $RefreshDelay, $Region, $cloudId)
+        $CloudBlockStorageProvider.WaitForVolumeAvailable($VolumeId, $RefreshCount, $RefreshDelay, $Region, $Null)
 
     }
     catch {
@@ -655,19 +637,13 @@ function Get-CloudBlockStorageSnapshot {
         [Parameter (Mandatory=$False)][string]   $RegionOverride = $Null
     )
 
-    Get-CloudAccount($Account)
+    $CloudBlockStorageProvider = Get-CloudBlockStorageProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Block Storage Provider
-        $CloudBlockStorageProvider = New-Object net.openstack.Providers.Rackspace.CloudBlockStorageProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -682,7 +658,7 @@ function Get-CloudBlockStorageSnapshot {
         Write-Debug -Message "SnapshotId........: $SnapshotId" 
         Write-Debug -Message "RegionOverride....: $RegionOverride" 
 
-        $CloudBlockStorageProvider.ShowSnapshot($SnapshotId, $Region, $cloudId)
+        $CloudBlockStorageProvider.ShowSnapshot($SnapshotId, $Region, $Null)
 
     }
     catch {
@@ -721,19 +697,13 @@ function Get-CloudBlockStorageVolumeTypes {
         [Parameter (Mandatory=$False)][string]   $RegionOverride = $Null
     )
 
-    Get-CloudAccount($Account)
+    $CloudBlockStorageProvider = Get-CloudBlockStorageProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Block Storage Provider
-        $CloudBlockStorageProvider = New-Object net.openstack.Providers.Rackspace.CloudBlockStorageProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -747,7 +717,7 @@ function Get-CloudBlockStorageVolumeTypes {
         Write-Debug -Message "Account...........: $Account"
         Write-Debug -Message "RegionOverride....: $RegionOverride" 
 
-        $CloudBlockStorageProvider.ListVolumeTypes($Region, $cloudId)
+        $CloudBlockStorageProvider.ListVolumeTypes($Region, $null)
 
     }
     catch {
@@ -786,19 +756,13 @@ function Watch-CloudBlockStorageSnapshotAvailable {
         [Parameter (Mandatory=$False)][string]   $RegionOverride = $Null
     )
 
-    Get-CloudAccount($Account)
+    $CloudBlockStorageProvider = Get-CloudBlockStorageProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Block Storage Provider
-        $CloudBlockStorageProvider = New-Object net.openstack.Providers.Rackspace.CloudBlockStorageProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -815,7 +779,7 @@ function Watch-CloudBlockStorageSnapshotAvailable {
         Write-Debug -Message "RefreshDelay......: $RefreshDelay"
         Write-Debug -Message "RegionOverride....: $RegionOverride" 
 
-        $CloudBlockStorageProvider.WaitForSnapshotAvailable($SnapshotId, $RefreshCount, $RefreshDelay, $Region, $cloudId)
+        $CloudBlockStorageProvider.WaitForSnapshotAvailable($SnapshotId, $RefreshCount, $RefreshDelay, $Region, $Null)
 
     }
     catch {
@@ -863,19 +827,13 @@ function Watch-CloudBlockStorageVolumeDeleted {
         [Parameter (Mandatory=$False)][string]   $RegionOverride = $Null
     )
 
-    Get-CloudAccount($Account)
+    $CloudBlockStorageProvider = Get-CloudBlockStorageProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Block Storage Provider
-        $CloudBlockStorageProvider = New-Object net.openstack.Providers.Rackspace.CloudBlockStorageProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -891,8 +849,9 @@ function Watch-CloudBlockStorageVolumeDeleted {
         Write-Debug -Message "RefreshCount......: $RefreshCount"
         Write-Debug -Message "RefreshDelay......: $RefreshDelay"
         Write-Debug -Message "RegionOverride....: $RegionOverride" 
+        
 
-        $CloudBlockStorageProvider.WaitForVolumeDeleted($VolumeId, $RefreshCount, $RefreshDelay, $Region, $cloudId)
+        $CloudBlockStorageProvider.WaitForVolumeDeleted($VolumeId, $RefreshCount, $RefreshDelay, $Region, $Null)
 
     }
     catch {
@@ -942,19 +901,13 @@ function Watch-CloudBlockStorageVolumeState {
         [Parameter (Mandatory=$False)][string]   $RegionOverride = $Null
     )
 
-    Get-CloudAccount($Account)
+    $CloudBlockStorageProvider = Get-CloudBlockStorageProvider -Account $Account
 
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
 
     try {
-
-        # Get Identity Provider
-        $cloudId = Get-CloudIdentityProvider -Username $Credentials.CloudUsername -APIKey $Credentials.CloudAPIKey
-
-        # Get Cloud Block Storage Provider
-        $CloudBlockStorageProvider = New-Object net.openstack.Providers.Rackspace.CloudBlockStorageProvider
 
         # Use Region code associated with Account, or was an override provided?
         if ($RegionOverride) {
@@ -973,7 +926,7 @@ function Watch-CloudBlockStorageVolumeState {
         Write-Debug -Message "RefreshDelay......: $RefreshDelay"
         Write-Debug -Message "RegionOverride....: $RegionOverride" 
 
-        $CloudBlockStorageProvider.WaitForVolumeState($VolumeId, $ExpectedState, $ErrorStates, $RefreshCount, $RefreshDelay, $Region, $cloudId)
+        $CloudBlockStorageProvider.WaitForVolumeState($VolumeId, $ExpectedState, $ErrorStates, $RefreshCount, $RefreshDelay, $Region, $Null)
 
     }
     catch {
