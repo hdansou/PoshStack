@@ -882,8 +882,9 @@ function Get-CloudObjectStorageObjects{
         [Parameter (Mandatory=$False)][string] $RegionOverride = $Null
     )
 
-    $CloudObjectStorageProvider = Get-CloudBlockStorageProvider -Account $Account
+    $CloudObjectStorageProvider = Get-CloudObjectStorageProvider -Account $Account
 
+    
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
