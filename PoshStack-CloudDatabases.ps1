@@ -90,7 +90,6 @@ function Get-CloudDatabases {
         Write-Debug -Message "Account.......: $Account" 
         Write-Debug -Message "RegionOverride: $RegionOverride" 
 
-#       cdbp.ListDatabasesAsync(DatabaseInstanceId, DatabaseName, limit, cancellationToken);
         $CancellationToken = New-Object ([System.Threading.CancellationToken]::None)
         $iid = New-Object ([net.openstack.Providers.Rackspace.Objects.Databases.DatabaseInstanceId]) $InstanceId
         $dbn = New-Object ([net.openstack.Providers.Rackspace.Objects.Databases.DatabaseName]) $DatabaseName
@@ -174,11 +173,35 @@ function Get-CloudDatabaseFlavors {
         Write-Debug -Message "RegionOverride: $RegionOverride" 
 
         $CancellationToken = New-Object ([System.Threading.CancellationToken]::None)
-        $ComputeDatabasesProvider.ListFlavorsAsync($CancellationToken).Result
-        
+        $ListOfFlavors = $ComputeDatabasesProvider.ListFlavorsAsync($CancellationToken).Result
+        foreach ($dbflavor in $ListOfFlavors) {
+            Add-Member -InputObject $dbflavor -MemberType NoteProperty -Name Region -Value $Region
+        }
+        return $ListOfFlavors
 
     }
     catch {
         Invoke-Exception($_.Exception)
     }
+<#
+ .SYNOPSIS
+ Get the cloud database flavors in a region.
+
+ .DESCRIPTION
+ The Get-CloudDatabaseFlavors cmdlet retrieves a list of database flavors.
+ 
+ .PARAMETER Account
+ Use this parameter to indicate which account you would like to execute this request against. 
+ Valid choices are defined in PoshStack configuration file.
+
+ .PARAMETER RegionOverride
+ This parameter will temporarily override the default region set in PoshStack configuration file. 
+
+ .EXAMPLE
+ PS C:\Users\Administrator> Get-CloudDatabaseFlavors -Account demo
+ This example will get the flavors in the default region for the account "demo".
+
+ .LINK
+ http://docs.rackspace.com/cdb/api/v1.0/cdb-devguide/content/GET_getFlavors__version___accountId__flavors_flavors.html
+#>
 }
