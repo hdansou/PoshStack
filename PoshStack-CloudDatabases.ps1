@@ -102,6 +102,46 @@ function Get-CloudDatabases {
     }
 }
 
+function New-CloudDatabase {
+    Param(
+        [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required Cloud Account with -Account parameter"),
+        [Parameter (Mandatory=$True)] [net.openstack.Providers.Rackspace.Objects.Databases.DatabaseInstanceId] $DBInstanceId = $(throw "-DBInstanceId parameter"),
+        [Parameter (Mandatory=$True)] [net.openstack.Providers.Rackspace.Objects.Databases.DatabaseConfiguration]    $DBConfiguration = $(throw "-DBConfiguration parameter"),
+        [Parameter (Mandatory=$False)][string] $RegionOverride
+        )
+
+    Get-CloudAccount -Account $Account
+    
+    if ($RegionOverride){
+        $Global:RegionOverride = $RegionOverride
+    }
+
+    # Use Region code associated with Account, or was an override provided?
+    if ($RegionOverride) {
+        $Region = $Global:RegionOverride
+    } else {
+        $Region = $Credentials.Region
+    }
+
+
+    $ComputeDatabasesProvider = Get-CloudDatabasesProvider -Account $Account -RegionOverride $Region
+
+    try {
+
+        # DEBUGGING       
+        Write-Debug -Message "New-CloudDatabase"
+        Write-Debug -Message "Account.......: $Account" 
+        Write-Debug -Message "RegionOverride: $RegionOverride" 
+
+        $CancellationToken = New-Object ([System.Threading.CancellationToken]::None)
+        $ComputeDatabasesProvider.CreateDatabaseAsync($DBInstanceId, $DBConfiguration, $CancellationToken).Result
+
+    }
+    catch {
+        Invoke-Exception($_.Exception)
+    }
+}
+
 function Get-CloudDatabaseInstances {
     Param(
         [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required Cloud Account with -Account parameter"),
@@ -136,7 +176,6 @@ function Get-CloudDatabaseInstances {
         $CancellationToken = New-Object ([System.Threading.CancellationToken]::None)
         $mkr = New-Object ([net.openstack.Providers.Rackspace.Objects.Databases.DatabaseInstanceId]) $Marker
         $ComputeDatabasesProvider.ListDatabaseInstancesAsync($mkr, $Limit, $CancellationToken).Result
-
     }
     catch {
         Invoke-Exception($_.Exception)
