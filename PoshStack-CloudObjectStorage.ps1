@@ -54,7 +54,7 @@ function Remove-CloudObjectStorageObjects{
         [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required Cloud Account with -Account parameter"),
         [Parameter (Mandatory=$True)] [string] $ContainerName= $(throw "Please specify required Container Name with the -ContainerName paramter"),
         [Parameter (Mandatory=$True)] [array]  $ItemsToDelete = $(throw "Please specify required items to be deleted with the -ItemsToDelete parameter"),
-        [Parameter (Mandatory=$False)][hashtable]  $Headers = $Null,
+        [Parameter (Mandatory=$False)][hashtable]  $Headers = @{},
         [Parameter (Mandatory=$False)][bool]   $UseInternalUrl = $False,
         [Parameter (Mandatory=$False)][string] $RegionOverride = $Null
     )
@@ -132,14 +132,7 @@ function Remove-CloudObjectStorageObjects{
         Write-Host "Region $Region"
         Write-Host $cloudId
 
-        Write-Host "CALL THE METHOD!"
-        #$CloudObjectStorageProvider.BulkDelete($ItemsArray, $Headers, $Region, $UseInternalUrl, $cloudId)
-
-        $Foo = New-Object 'System.Collections.Generic.Dictionary[String,String]'
-        #$Foo.Add("Container1","book.docx")
-        $Foo.Add("Container1","amen_main.html")
-        $CloudObjectStorageProvider.BulkDelete($Foo, $hdr, $Region, $UseInternalUrl, $Null)
-        #$CloudObjectStorageProvider.BulkDelete($ItemsArray, $hdr, $Region, $UseInternalUrl, $cloudId)
+        $CloudObjectStorageProvider.BulkDelete($ItemsArray, $Headers, $Region, $UseInternalUrl, $Null)
 
     }
     catch {
@@ -873,7 +866,7 @@ function Get-CloudObjectStorageContainers{
 function Get-CloudObjectStorageObjects{
     Param(
         [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required Cloud Account with -Account parameter"),
-        [Parameter (Mandatory=$True)] [string] $Container = $(throw "Please specify required Container with the -Container parameter"),
+        [Parameter (Mandatory=$True)] [string] $ContainerName = $(throw "Please specify required Container with the -ContainerName parameter"),
         [Parameter (Mandatory=$False)][int]    $Limit = 10000,
         [Parameter (Mandatory=$False)][string] $Marker = $null,
         [Parameter (Mandatory=$False)][string] $MarkerEnd = $Null,
@@ -900,7 +893,7 @@ function Get-CloudObjectStorageObjects{
 
         # DEBUGGING       
         Write-Debug -Message "Get-CloudObjectStorageObjects"
-        Write-Debug -Message "Container.....: $Container"
+        Write-Debug -Message "ContainerName.: $ContainerName"
         Write-Debug -Message "Limit.........: $Limit"
         Write-Debug -Message "Marker........: $Marker"
         Write-Debug -Message "MarkerEnd.....: $MarkerEnd"
@@ -908,10 +901,10 @@ function Get-CloudObjectStorageObjects{
         Write-Debug -Message "RegionOverride: $RegionOverride" 
         Write-Debug -Message "UseInternalUrl: $UseInternalUrl" 
         
-        $ListOfObjects = $CloudObjectStorageProvider.ListObjects($Container, $Limit, $Marker, $MarkerEnd, $Prefix, $Region, $UseInternalUrl, $Null)
+        $ListOfObjects = $CloudObjectStorageProvider.ListObjects($ContainerName, $Limit, $Marker, $MarkerEnd, $Prefix, $Region, $UseInternalUrl, $Null)
         foreach ($cloudObject in $ListOfObjects) {
             Add-Member -InputObject $cloudObject -MemberType NoteProperty -Name Region -Value $Region
-            Add-Member -InputObject $cloudObject -MemberType NoteProperty -Name Container -Value $Container
+            Add-Member -InputObject $cloudObject -MemberType NoteProperty -Name Container -Value $ContainerName
         }
 
         Return $ListOfObjects
