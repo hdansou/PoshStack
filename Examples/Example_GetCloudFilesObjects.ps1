@@ -1,4 +1,4 @@
 ﻿Clear
-$list = Get-CloudFilesContainers -Account demo -RegionOverride ORD
+$list = Get-OpenStackObjectStorageContainers -Account rackiad -RegionOverride ORD
 $list[1].Name
-Get-CloudFilesObjects -Account demo -Container $list[1].Name -RegionOverride ORD | Format-Table
+Get-OpenStackObjectStorageObjects -Account rackiad -Container $list[1].Name -RegionOverride ORD | Format-Table

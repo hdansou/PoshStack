@@ -21,47 +21,11 @@ List of cmdlets missing or not working
 - Authenticate User - Implemented in Get-AuthToken(main module)
 Get User Credentials - Currently-authenticated user details are already contained in $token
 List Crendentials - these details are already in the $token variable
-- Reset User Api Key - Reset-CloudIdentityUserApi #### Unsupported - need to test further ####
+- Reset User Api Key - Reset-OpenStackIdentityUserApi #### Unsupported - need to test further ####
 Revoke Token
 #>
 
-function Get-CloudIdentityUsers {
-    param (
-        [Parameter(Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -Account parameter")
-    )
-
-    Get-AuthToken($account)
-
-    $URI = (Get-CloudURI("identity")) + "users"
-
-    #return (Invoke-RestMethod -Uri $URI  -Headers $HeaderDictionary -ErrorAction Stop).users
-    $r = (Invoke-WebRequest -Uri $URI -Method GET -Headers $HeaderDictionary)|ConvertFrom-Json
-	return $r.users
-
-<#
- .SYNOPSIS
- Get a list of users on the account.
-
- .DESCRIPTION
- The Get-CloudIdentityUsers cmdlet will display a list of users on the cloud account together with extra details on each. 
- The list includes identifying information about each user. This will include the user's email account, username, user ID and status.
- 
- Please note: If not using the admin role then the request will only dislay the current user.
-
- .PARAMETER Account
- Use this parameter to indicate which account you would like to execute this request against. 
- Valid choices are defined in PoshNova configuration file.
-
- .EXAMPLE
- PS C:\> Get-CloudIdentityUsers prod
- This example shows how to get a list of all networks currently deployed in the account prod
-
- .LINK
- http://docs.rackspace.com/auth/api/v2.0/auth-client-devguide/content/User_Calls.html
-#>
-}
-
-function Get-CloudIdentityRoles {
+function Get-OpenStackIdentityRoles {
     param (
         [Parameter(Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -Account parameter")
     )
@@ -77,7 +41,7 @@ function Get-CloudIdentityRoles {
  Get a list of roles defined for the account.
 
  .DESCRIPTION
- The Get-CloudIdentityRoles cmdlet will display a list of roles on the cloud account together with extra details on each. 
+ The Get-OpenStackIdentityRoles cmdlet will display a list of roles on the cloud account together with extra details on each. 
  The list includes information about each role. This will include role id, name, wieght, propagation and description.
 
  .PARAMETER Account
@@ -85,7 +49,7 @@ function Get-CloudIdentityRoles {
  Valid choices are defined in PoshNova configuration file.
 
  .EXAMPLE
- PS C:\> Get-CloudIdentityRoles prod
+ PS C:\> Get-OpenStackIdentityRoles prod
  This example shows how to get a list of all networks currently deployed for prod account.
 
  .LINK
@@ -93,7 +57,7 @@ function Get-CloudIdentityRoles {
 #>
 }
 
-function Get-CloudIdentityTenants {
+function Get-OpenStackIdentityTenants {
     param (
         [Parameter(Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -Account parameter")
     )
@@ -109,21 +73,21 @@ function Get-CloudIdentityTenants {
  Get a list of tenants in an OpenStack deployment.
 
  .DESCRIPTION
- The Get-CloudIdentityTenants cmdlet will display a list of tenants on an OpenStack deployment. This is not really used on Rackspace Public cloud.
+ The Get-OpenStackIdentityTenants cmdlet will display a list of tenants on an OpenStack deployment. This is not really used on Rackspace Public cloud.
 
  .PARAMETER Account
  Use this parameter to indicate which account you would like to execute this request against. 
  Valid choices are defined in PoshNova configuration file.
 
  .EXAMPLE
- PS C:\> Get-CloudIdentityRoles prod
+ PS C:\> Get-OpenStackIdentityRoles prod
  
  .LINK
  http://docs.rackspace.com/auth/api/v2.0/auth-client-devguide/content/GET_listTenants_v2.0_tenants_Tenant_Calls.html
 #>
 }
 
-function Get-CloudIdentityUser {
+function Get-OpenStackIdentityUser {
     param (
         [Parameter(Position=0,Mandatory=$False)][string] $UserID,
         [Parameter(Position=0,Mandatory=$False)][string] $UserName,
@@ -160,7 +124,7 @@ function Get-CloudIdentityUser {
  Get details of a single user, identified by ID, name or email.
 
  .DESCRIPTION
- The Get-CloudIdentityUser cmdlet will retrieve user details for a user, which can be identified by his/her ID, username or email address. 
+ The Get-OpenStackIdentityUser cmdlet will retrieve user details for a user, which can be identified by his/her ID, username or email address. 
 
  The details returned includes user ID, status, creation and update dates/times, default region and email address.
 
@@ -178,15 +142,15 @@ function Get-CloudIdentityUser {
  Use this optional parameter to identify user by his/her email you would like to specify. 
 
  .EXAMPLE
- PS C:\> Get-CloudIdentityUser -UserName demouser -Account prod
+ PS C:\> Get-OpenStackIdentityUser -UserName demouser -Account prod
  This example shows how to get details user demouser in prod account.
 
  .EXAMPLE
- PS C:\> Get-CloudIdentityUser -UserID 12345678 -Account prod
+ PS C:\> Get-OpenStackIdentityUser -UserID 12345678 -Account prod
  This example shows how to get details user ID 12345678 in prod account.
 
  .EXAMPLE
- PS C:\> Get-CloudIdentityUser -UserEmail demouser@democorp.com -Account prod
+ PS C:\> Get-OpenStackIdentityUser -UserEmail demouser@democorp.com -Account prod
  This example shows how to get details user with email 'demouser@democorp.com' in prod account.
 
  .LINK
@@ -194,7 +158,7 @@ function Get-CloudIdentityUser {
 #>
 }
 
-function Get-CloudIdentityUserRoles {
+function Get-OpenStackIdentityUserRoles {
     param (
         [Parameter(Position=0,Mandatory=$True)][string] $UserID = $(throw "Specify the user ID with -UserID"),
         [Parameter(Position=1,Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -Account parameter")
@@ -211,7 +175,7 @@ function Get-CloudIdentityUserRoles {
  Get a list roles which a specific user is asigned.
 
  .DESCRIPTION
- The Get-CloudIdentityUserRoles cmdlet will display a list of roles which a user is assigned.
+ The Get-OpenStackIdentityUserRoles cmdlet will display a list of roles which a user is assigned.
  The list includes role id, name, , propagation and description.
 
  .PARAMETER Account
@@ -222,7 +186,7 @@ function Get-CloudIdentityUserRoles {
  Use this mandatory parameter to specify a user by his/her user ID. 
 
  .EXAMPLE
- PS C:\> Get-CloudIdentityUserRoles -UserID 12345678 -Account prod
+ PS C:\> Get-OpenStackIdentityUserRoles -UserID 12345678 -Account prod
  This example shows how to get a list of assigned roles for a specific user, identified by his/her user ID.
 
  .LINK
@@ -230,7 +194,7 @@ function Get-CloudIdentityUserRoles {
 #>
 }
 
-function Reset-CloudIdentityUserApi {
+function Reset-OpenStackIdentityUserApi {
     param (
         [Parameter(Position=0,Mandatory=$True)][string] $UserID = $(throw "Specify the user ID with -UserID"),
         [Parameter(Position=1,Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -Account parameter")
@@ -249,7 +213,7 @@ function Reset-CloudIdentityUserApi {
     Invoke-RestMethod -Uri $URI -Headers $HeaderDictionary -Method Post -ErrorAction Stop
 }
 
-function New-CloudIdentityUser {
+function New-OpenStackIdentityUser {
     param (
         [Parameter(Position=0,Mandatory=$True)][string] $UserName = $(throw "Specify the user name with -UserName"),
         [Parameter(Position=1,Mandatory=$True)][string] $UserEmail = $(throw "Specify the user's email with -UserEmail"),
@@ -283,7 +247,7 @@ function New-CloudIdentityUser {
  Create a new cloud user.
 
  .DESCRIPTION
- The New-CloudIdentityUser cmdlet will create a new user.
+ The New-OpenStackIdentityUser cmdlet will create a new user.
  The list includes role id, name, , propagation and description.
 
  .PARAMETER $UserName
@@ -304,7 +268,7 @@ function New-CloudIdentityUser {
  Valid choices are defined in PoshNova configuration file.
 
  .EXAMPLE
- PS C:\> Get-CloudIdentityUserRoles -UserID 12345678 -Account prod
+ PS C:\> Get-OpenStackIdentityUserRoles -UserID 12345678 -Account prod
  This example shows how to get a list of assigned roles for a specific user, identified by his/her user ID.
 
  .LINK
@@ -312,7 +276,7 @@ function New-CloudIdentityUser {
 #>
 }
 
-function Remove-CloudIdentityUser {
+function Remove-OpenStackIdentityUser {
     param (
         [Parameter(Position=0,Mandatory=$True)][string] $UserID = $(throw "Specify the user ID with -UserID"),
         [Parameter(Position=1,Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -Account parameter")
@@ -327,7 +291,7 @@ function Remove-CloudIdentityUser {
 
 }
 
-function Edit-CloudIdentityUser {
+function Edit-OpenStackIdentityUser {
     param (
         [Parameter(Position=0,Mandatory=$True)][string] $UserID = $(throw "Specify the user name with -UserID"),
         [Parameter(Position=1,Mandatory=$False)][string] $UserName,
@@ -383,7 +347,7 @@ function Edit-CloudIdentityUser {
  Edit an existing cloud user.
 
  .DESCRIPTION
- The Edit-CloudIdentityUser cmdlet will edit any attributes for an existing user, as supplied via the parameters.
+ The Edit-OpenStackIdentityUser cmdlet will edit any attributes for an existing user, as supplied via the parameters.
  All optional parameters can be specified as part of the same command.
 
  .PARAMETER $UserID
@@ -406,7 +370,7 @@ function Edit-CloudIdentityUser {
  Valid choices are defined in PoshNova configuration file.
 
  .EXAMPLE
- PS C:\> Edit-CloudIdentityUser -UserID 12345678 -Account prod -UserName "new-user-name" -Disabled false
+ PS C:\> Edit-OpenStackIdentityUser -UserID 12345678 -Account prod -UserName "new-user-name" -Disabled false
  This example shows how to change the username for a specific user at the same time as enabling it.
 
  .LINK
@@ -414,7 +378,7 @@ function Edit-CloudIdentityUser {
 #>
 }
 
-function Add-CloudIdentityRoleForUser {
+function Add-OpenStackIdentityRoleForUser {
     param (
         [Parameter(Position=0,Mandatory=$True)][string] $UserID = $(throw "Specify the user ID with -UserID"),
         [Parameter(Position=1,Mandatory=$True)][string] $RoleID = $(throw "Specify the role ID with -RoleID"),
@@ -432,20 +396,20 @@ function Add-CloudIdentityRoleForUser {
  Add role membership for a cloud user.
 
  .DESCRIPTION
- The Add-CloudIdentityRoleForUser cmdlet will add role membership for an existing cloud user.
+ The Add-OpenStackIdentityRoleForUser cmdlet will add role membership for an existing cloud user.
 
  .PARAMETER $UserID
  Use this mandatory parameter to identify the user you would like to edit by his/her unique ID.
 
  .PARAMETER $RoleID
- Use this mandatory parameter used to specify the role ID. Use Get-CloudIdentityRoles to see a list of all available roles.
+ Use this mandatory parameter used to specify the role ID. Use Get-OpenStackIdentityRoles to see a list of all available roles.
 
  .PARAMETER $Account
  Use this mandatory parameter to indicate which account you would like to execute this request against. 
  Valid choices are defined in PoshNova configuration file.
 
  .EXAMPLE
- PS C:\> Add-CloudIdentityRoleForUser -UserID 12345678 -RoleID 12345678 -Account prod
+ PS C:\> Add-OpenStackIdentityRoleForUser -UserID 12345678 -RoleID 12345678 -Account prod
  This example shows how to modify role assignment for a specific user.
 
  .LINK
@@ -453,7 +417,7 @@ function Add-CloudIdentityRoleForUser {
 #>
 }
 
-function Remove-CloudIdentityRoleForUser {
+function Remove-OpenStackIdentityRoleForUser {
     param (
         [Parameter(Position=0,Mandatory=$True)][string] $UserID = $(throw "Specify the user ID with -UserID"),
         [Parameter(Position=1,Mandatory=$True)][string] $RoleID = $(throw "Specify the role ID with -RoleID"),
@@ -471,20 +435,20 @@ function Remove-CloudIdentityRoleForUser {
  Remove role membership from a cloud user.
 
  .DESCRIPTION
- The Remove-CloudIdentityRoleForUser cmdlet will remove role membership for an existing cloud user.
+ The Remove-OpenStackIdentityRoleForUser cmdlet will remove role membership for an existing cloud user.
 
  .PARAMETER $UserID
  Use this mandatory parameter to identify the user you would like to edit by his/her unique ID.
 
  .PARAMETER $RoleID
- Use this mandatory parameter used to specify the role ID. Use Get-CloudIdentityUserRoles to see a list of all currently-assigned roles for this user.
+ Use this mandatory parameter used to specify the role ID. Use Get-OpenStackIdentityUserRoles to see a list of all currently-assigned roles for this user.
 
  .PARAMETER $Account
  Use this mandatory parameter to indicate which account you would like to execute this request against. 
  Valid choices are defined in PoshNova configuration file.
 
  .EXAMPLE
- PS C:\> Remove-CloudIdentityRoleForUser -UserID 12345678 -RoleID 12345678 -Account prod
+ PS C:\> Remove-OpenStackIdentityRoleForUser -UserID 12345678 -RoleID 12345678 -Account prod
  This example shows how to modify role assignment for a specific user.
 
  .LINK

@@ -23,7 +23,7 @@ $Global:PoshStackConfigFile = $env:USERPROFILE + "\Documents\WindowsPowerShell\M
 #
 ############################################################################################
 
-function Get-CloudIdentityProvider {
+function Get-OpenStackIdentityProvider {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory=$True)][string] $Username = $(throw "Please specify required Username with -Username parameter"),
@@ -31,14 +31,14 @@ function Get-CloudIdentityProvider {
     )
 
     # Get Identity Provider
-    $cloudId    = New-Object net.openstack.Core.Domain.CloudIdentity
-    $cloudId.Username = $Username
-    $cloudId.APIKey   = $APIKey
-    $cip = New-Object net.openstack.Providers.Rackspace.CloudIdentityProvider($cloudId)
-    Return $cloudId
+    $OpenStackId    = New-Object net.openstack.Core.Domain.CloudIdentity
+    $OpenStackId.Username = $Username
+    $OpenStackId.APIKey   = $APIKey
+    $cip = New-Object net.openstack.Providers.Rackspace.CloudIdentityProvider($OpenStackId)
+    Return $OpenStackId
 }
 
-function Get-CloudIdentityProviderOpenStack {
+function Get-OpenStackIdentityProviderOpenStack {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory=$True)][string] $Username = $(throw "Please specify required Username with -Username parameter"),
@@ -47,16 +47,16 @@ function Get-CloudIdentityProviderOpenStack {
         [Parameter(Mandatory=$True)][System.Uri] $Uri = $(throw "Please specify required Identity Endpoint Uri with -Uri parameter")
     )
 
-    $CloudIdentityWithProject = New-Object net.openstack.Core.Domain.CloudIdentityWithProject
-    $CloudIdentityWithProject.Password = $Password
-    $CloudIdentityWithProject.Username = $Username
-    $CloudIdentityWithProject.ProjectId = $ProjectId
+    $OpenStackIdentityWithProject = New-Object net.openstack.Core.Domain.CloudIdentityWithProject
+    $OpenStackIdentityWithProject.Password = $Password
+    $OpenStackIdentityWithProject.Username = $Username
+    $OpenStackIdentityWithProject.ProjectId = $ProjectId
             
-    New-Object net.openstack.Core.Providers.OpenStackIdentityProvider($Uri, $CloudIdentityWithProject)
+    New-Object net.openstack.Core.Providers.CloudIdentityProvider($Uri, $OpenStackIdentityWithProject)
 
 }
 
-function Get-CloudAccount {
+function Get-OpenStackAccount {
     <#
     Read $Global:PoshStackConfigFile then populate global account variables 
     based on value of $Global:account
@@ -64,7 +64,7 @@ function Get-CloudAccount {
 
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account by using the -Account parameter")
+        [Parameter(Mandatory=$True)][string] $Account = $(throw "Please specify required OpenStack Account by using the -Account parameter")
     )
 
     try {
@@ -74,7 +74,7 @@ function Get-CloudAccount {
 
         # Raise exception if specified $account is not found in conf file
         if ($Credentials.AccountName -eq $null) {
-            throw "Get-CloudAccount: Account `"$account`"  is not defined in the configuration (CloudAccounts.csv) file"
+            throw "Get-OpenStackAccount: Account `"$account`"  is not defined in the configuration (CloudAccounts.csv) file"
         }
 
     }
@@ -113,7 +113,7 @@ function Show-UntestedWarning {
     }
 }
 
-function Show-CloudAccounts {
+function Show-OpenStackAccounts {
     Import-Csv $Global:PoshStackConfigFile | ft -AutoSize
 
 <#
