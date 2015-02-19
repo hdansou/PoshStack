@@ -122,7 +122,7 @@ function Add-OpenStackComputeServerVolume {
 }
 
 #ChangeAdministratorPassword
-function Set-OpenStackComputeServerAdministratorPassword{
+function Set-OpenStackComputeServerAdministratorPassword {
     Param(
         [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required OpenStack Account with -Account parameter"),
         [Parameter (Mandatory=$True)] [string] $ServerId = $(throw "Server Id is required"),
@@ -189,7 +189,7 @@ function Set-OpenStackComputeServerAdministratorPassword{
 
 #ConfirmServerResize
 #CreateImage
-function New-OpenStackComputeServerImage{
+function New-OpenStackComputeServerImage {
     Param(
         [Parameter (Mandatory=$True)] [string]    $Account    = $(throw "Please specify required OpenStack Account with -Account parameter"),
         [Parameter (Mandatory=$True)] [string]    $ServerId   = $(throw "Server Id is required"),
@@ -731,18 +731,18 @@ function Get-OpenStackComputeServer {
     [CmdletBinding()]
 
     Param(
-        [Parameter (Mandatory=$True)] [string]$Account,
-        [Parameter (Mandatory=$False)][string] $ServerId,
-        [Parameter (Mandatory=$False)][string]$RegionOverride = $Null,
-        [Parameter (Mandatory=$False)][string]$ImageId = $Null,
-        [Parameter (Mandatory=$False)][string]$FlavorId = $Null,
-        [Parameter (Mandatory=$False)][string]$ServerName = $null,
-        [Parameter (Mandatory=$False)][object]$ServerState = $Null,
-        [Parameter (Mandatory=$False)][string]$MarkerId = $Null,
-        [Parameter (Mandatory=$False)][int]   $Limit = 10000,
-        [Parameter (Mandatory=$False)][object]$ChangesSince = $Null,
-        [Parameter (Mandatory=$False)][switch]$Details
-    )
+        [Parameter (Mandatory=$True)] [string] $Account,
+        [Parameter (Mandatory=$False)][string] $ServerId = $Null,
+        [Parameter (Mandatory=$False)][string] $RegionOverride = $Null,
+        [Parameter (Mandatory=$False)][string] $ImageId = $Null,
+        [Parameter (Mandatory=$False)][string] $FlavorId = $Null,
+        [Parameter (Mandatory=$False)][string] $ServerName = $null,
+        [Parameter (Mandatory=$False)][object] $ServerState = $Null,
+        [Parameter (Mandatory=$False)][string] $MarkerId = $Null,
+        [Parameter (Mandatory=$False)][int]    $Limit = 10000,
+        [Parameter (Mandatory=$False)][object] $ChangesSince = $Null,
+        [Parameter (Mandatory=$False)][switch] $Details
+    ) 
 
     $OpenStackComputeServersProvider = Get-OpenStackComputeProvider -Account $Account
 
@@ -773,9 +773,7 @@ function Get-OpenStackComputeServer {
             Write-Debug -Message "ChangesSince: $ChangesSince"
             Write-Debug -Message "Region......: $Region"
 
-            if ($ServerId -ne $Null) {
-                return $OpenStackComputeServersProvider.GetDetails($ServerId, $Region, $Null)
-            } else {
+            if ([string]::IsNullOrEmpty($ServerId)) {
                 # Get the list of servers
                 if ($Details) {
                     $ServerList = $OpenStackComputeServersProvider.ListServersWithDetails($ImageId, $FlavorId, $ServerName, $ServerState, $MarkerId, $Limit, $ChangesSince, $Region, $Null)
@@ -788,19 +786,20 @@ function Get-OpenStackComputeServer {
                 if ($ServerList.Count -eq 0) {
                     Write-Verbose "You do not currently have any Cloud Servers provisioned in region '$Region'."
                 }
-                elseif($ServerList.Count -ne 0){
-                foreach ($server in $ServerList)
-                {
-                    Add-Member -InputObject $server -MemberType NoteProperty -Name Region -Value $Region
+                elseif ($ServerList.Count -ne 0) {
+                    foreach ($server in $ServerList)
+                    {
+                        Add-Member -InputObject $server -MemberType NoteProperty -Name Region -Value $Region
+                    }
+    		        $ServerList;
+                    } 
+                } else {
+                    return $OpenStackComputeServersProvider.GetDetails($ServerId, $Region, $Null)
                 }
-    		    $ServerList;
             }
+        catch {
+            Invoke-Exception($_.Exception)
         }
-    }
-    catch {
-        Invoke-Exception($_.Exception)
-    }
-       
 <#
  .SYNOPSIS
  Retrieve all cloud server instances for a Region.

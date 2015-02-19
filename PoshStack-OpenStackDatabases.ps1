@@ -10,7 +10,7 @@ Description
 
 ############################################################################################>
 
-function Get-CloudDatabasesProvider {
+function Get-OpenStackDatabasesProvider {
     Param(
         [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required Cloud Account by using the -Account parameter"),
         [Parameter (Mandatory=$False)][string] $RegionOverride = $(throw "Please specify required Region by using the -RegionOverride parameter")
@@ -19,7 +19,7 @@ function Get-CloudDatabasesProvider {
     # The Account comes from the file CloudAccounts.csv
     # It has information regarding credentials and the type of provider (Generic or Rackspace)
 
-    Get-CloudAccount -Account $Account
+    Get-OpenStackAccount -Account $Account
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
     }
@@ -57,7 +57,7 @@ function Get-CloudDatabasesProvider {
     }
 }
 
-function New-CloudDatabaseInstance {
+function New-OpenStackDatabaseInstance {
     Param(
         [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required Cloud Account by using the -Account parameter"),
         [Parameter (Mandatory=$True)] [string] $InstanceName = $(throw "Please specify required Database Instance Name by using the -InstanceName parameter"),
@@ -67,7 +67,7 @@ function New-CloudDatabaseInstance {
     )
 
 
-    Get-CloudAccount -Account $Account
+    Get-OpenStackAccount -Account $Account
     
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
@@ -81,24 +81,24 @@ function New-CloudDatabaseInstance {
     }
 
 
-    $ComputeDatabasesProvider = Get-CloudDatabasesProvider -Account $Account -RegionOverride $Region
+    $ComputeDatabasesProvider = Get-OpenStackDatabasesProvider -Account $Account -RegionOverride $Region
 
     try {
 
         # DEBUGGING       
-        Write-Debug -Message "Get-CloudDatabases"
+        Write-Debug -Message "Get-OpenStackDatabases"
         Write-Debug -Message "Account.......: $Account" 
         Write-Debug -Message "RegionOverride: $RegionOverride" 
 
         $CancellationToken = New-Object ([System.Threading.CancellationToken]::None)
-        $CancellationToken.GetType()
-        #$AsyncCompletionOption = New-Object ([net.openstack.Core.AsyncCompletionOption]::RequestCompleted)
-        Clear
-        $flavorref = New-Object -TypeName ([net.openstack.Providers.Rackspace.Objects.Databases.FlavorRef]) -ArgumentList @($FlavorId)
-        $flavorref.GetType()
-        $dbInstanceConfig = New-Object -Type ([net.openstack.Providers.Rackspace.Objects.Databases.DatabaseInstanceConfiguration]) -ArgumentList @($flavorref, $InstanceName, $foo)
-        #$ComputeDatabasesProvider.CreateDatabaseInstanceAsync($dbInstanceConfig, $AsyncCompletionOption, $CancellationToken, $null).Result
-        $ComputeDatabasesProvider.CreateDatabaseInstanceAsync($dbInstanceConfig, [net.openstack.Core+AsyncCompletionOption]::RequestCompleted, $CancellationToken, $null).Result
+        $a = New-Object([net.openstack.Core.AsyncCompletionOption])
+      #  $AsyncCompletionOption = New-Object ([net.openstack.Core.AsyncCompletionOption]::RequestCompleted)
+        $AsyncCompletionOption = $a::RequestCompleted
+        $flavorref = New-Object ([net.openstack.Providers.Rackspace.Objects.Databases.FlavorRef]) $FlavorId
+        $dbVolumeConfig = New-Object ([net.openstack.Providers.Rackspace.Objects.Databases.DatabaseVolumeConfiguration]) $SizeInGB
+        $dbInstanceConfig = New-Object -Type ([net.openstack.Providers.Rackspace.Objects.Databases.DatabaseInstanceConfiguration]) -ArgumentList @($flavorref, $dbVolumeConfig, $InstanceName)
+        $dbInstanceConfig.GetType()
+        $ComputeDatabasesProvider.CreateDatabaseInstanceAsync($dbInstanceConfig, [net.openstack.Core.AsyncCompletionOption]::RequestCompleted, $CancellationToken, $null).Result
 
     }
     catch {
@@ -106,17 +106,17 @@ function New-CloudDatabaseInstance {
     }
 }
 
-function Get-CloudDatabase {
+function Get-OpenStackDatabase {
     Param(
         [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required Cloud Account by using the -Account parameter"),
         [Parameter (Mandatory=$True)] [string] $InstanceId = $(throw "Please specify required Database Instance Id by using the -InstanceId parameter"),
-        [Parameter (Mandatory=$True)] [string] $DatabaseName = $(throw "Please specify required Database Name by using the -DatabaseName parameter"),
+        [Parameter (Mandatory=$False)][string] $Marker = " ",
         [Parameter (Mandatory=$False)][int]    $Limit = 10000,
         [Parameter (Mandatory=$False)][string] $RegionOverride
     )
 
 
-    Get-CloudAccount -Account $Account
+    Get-OpenStackAccount -Account $Account
     
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
@@ -130,20 +130,21 @@ function Get-CloudDatabase {
     }
 
 
-    $ComputeDatabasesProvider = Get-CloudDatabasesProvider -Account $Account -RegionOverride $Region
+    $ComputeDatabasesProvider = Get-OpenStackDatabasesProvider -Account $Account -RegionOverride $Region
 
     try {
 
         # DEBUGGING       
-        Write-Debug -Message "Get-CloudDatabases"
+        Write-Debug -Message "Get-OpenStackDatabases"
         Write-Debug -Message "Account.......: $Account" 
         Write-Debug -Message "RegionOverride: $RegionOverride" 
+        Write-Debug -Message "Marker........: $Marker"
 
         $CancellationToken = New-Object ([System.Threading.CancellationToken]::None)
         $iid = New-Object ([net.openstack.Providers.Rackspace.Objects.Databases.DatabaseInstanceId]) $InstanceId
-        $dbn = New-Object ([net.openstack.Providers.Rackspace.Objects.Databases.DatabaseName]) $DatabaseName
+        $mkr = New-Object ([net.openstack.Providers.Rackspace.Objects.Databases.DatabaseName]) $Marker
 
-        $ComputeDatabasesProvider.ListDatabasesAsync($iid, $dbn, $Limit, $CancellationToken).Result
+        $ComputeDatabasesProvider.ListDatabasesAsync($iid, $mkr, $Limit, $CancellationToken).Result
 
     }
     catch {
@@ -151,7 +152,7 @@ function Get-CloudDatabase {
     }
 }
 
-function New-CloudDatabase {
+function New-OpenStackDatabase {
     Param(
         [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required Cloud Account with -Account parameter"),
         [Parameter (Mandatory=$True)] [net.openstack.Providers.Rackspace.Objects.Databases.DatabaseInstanceId] $DBInstanceId = $(throw "-DBInstanceId parameter"),
@@ -159,7 +160,7 @@ function New-CloudDatabase {
         [Parameter (Mandatory=$False)][string] $RegionOverride
         )
 
-    Get-CloudAccount -Account $Account
+    Get-OpenStackAccount -Account $Account
     
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
@@ -173,12 +174,12 @@ function New-CloudDatabase {
     }
 
 
-    $ComputeDatabasesProvider = Get-CloudDatabasesProvider -Account $Account -RegionOverride $Region
+    $ComputeDatabasesProvider = Get-OpenStackDatabasesProvider -Account $Account -RegionOverride $Region
 
     try {
 
         # DEBUGGING       
-        Write-Debug -Message "New-CloudDatabase"
+        Write-Debug -Message "New-OpenStackDatabase"
         Write-Debug -Message "Account.......: $Account" 
         Write-Debug -Message "RegionOverride: $RegionOverride" 
 
@@ -191,7 +192,7 @@ function New-CloudDatabase {
     }
 }
 
-function Get-CloudDatabaseInstance {
+function Get-OpenStackDatabaseInstance {
     Param(
         [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required Cloud Account with -Account parameter"),
         [Parameter (Mandatory=$False)][string] $Marker = " ",
@@ -199,7 +200,7 @@ function Get-CloudDatabaseInstance {
         [Parameter (Mandatory=$False)][string] $RegionOverride
         )
 
-    Get-CloudAccount -Account $Account
+    Get-OpenStackAccount -Account $Account
     
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
@@ -213,12 +214,12 @@ function Get-CloudDatabaseInstance {
     }
 
 
-    $ComputeDatabasesProvider = Get-CloudDatabasesProvider -Account $Account -RegionOverride $Region
+    $ComputeDatabasesProvider = Get-OpenStackDatabasesProvider -Account $Account -RegionOverride $Region
 
     try {
 
         # DEBUGGING       
-        Write-Debug -Message "Get-CloudDatabases"
+        Write-Debug -Message "Get-OpenStackDatabases"
         Write-Debug -Message "Account.......: $Account" 
         Write-Debug -Message "RegionOverride: $RegionOverride" 
 
@@ -231,13 +232,13 @@ function Get-CloudDatabaseInstance {
     }
 }
 
-function Get-CloudDatabaseFlavor {
+function Get-OpenStackDatabaseFlavor {
     Param(
         [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required Cloud Account with -Account parameter"),
         [Parameter (Mandatory=$False)][string] $RegionOverride
         )
 
-    Get-CloudAccount -Account $Account
+    Get-OpenStackAccount -Account $Account
     
     if ($RegionOverride){
         $Global:RegionOverride = $RegionOverride
@@ -251,12 +252,12 @@ function Get-CloudDatabaseFlavor {
     }
 
 
-    $ComputeDatabasesProvider = Get-CloudDatabasesProvider -Account $Account -RegionOverride $Region
+    $ComputeDatabasesProvider = Get-OpenStackDatabasesProvider -Account $Account -RegionOverride $Region
 
     try {
 
         # DEBUGGING       
-        Write-Debug -Message "Get-CloudDatabases"
+        Write-Debug -Message "Get-OpenStackDatabases"
         Write-Debug -Message "Account.......: $Account" 
         Write-Debug -Message "RegionOverride: $RegionOverride" 
 
@@ -276,7 +277,7 @@ function Get-CloudDatabaseFlavor {
  Get the cloud database flavors in a region.
 
  .DESCRIPTION
- The Get-CloudDatabaseFlavors cmdlet retrieves a list of database flavors.
+ The Get-OpenStackDatabaseFlavors cmdlet retrieves a list of database flavors.
  
  .PARAMETER Account
  Use this parameter to indicate which account you would like to execute this request against. 
@@ -286,7 +287,7 @@ function Get-CloudDatabaseFlavor {
  This parameter will temporarily override the default region set in PoshStack configuration file. 
 
  .EXAMPLE
- PS C:\Users\Administrator> Get-CloudDatabaseFlavors -Account demo
+ PS C:\Users\Administrator> Get-OpenStackDatabaseFlavors -Account demo
  This example will get the flavors in the default region for the account "demo".
 
  .LINK

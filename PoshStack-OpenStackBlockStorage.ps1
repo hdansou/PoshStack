@@ -445,7 +445,7 @@ function Get-OpenStackBlockStorageSnapshots {
 function Get-OpenStackBlockStorageVolume {
     Param(
         [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required Cloud Account with -Account parameter"),
-        [Paraemter (Mandatory=$False)][string] $VolumeId = $Null,
+        [Parameter (Mandatory=$False)][string] $VolumeId = $Null,
         [Parameter (Mandatory=$False)][string] $RegionOverride = $Null
     )
 
@@ -470,10 +470,10 @@ function Get-OpenStackBlockStorageVolume {
         Write-Debug -Message "VolumeId..........: $VolumeId"
         Write-Debug -Message "RegionOverride....: $RegionOverride" 
 
-        if ($VolumeId -ne $Null) {
-            $OpenStackBlockStorageProvider.ShowVolume($VolumeId, $Region, $Null)
-        } else {
+        if ([string]::IsNullOrEmpty($VolumeId)) {
             $OpenStackBlockStorageProvider.ListVolumes($Region, $Null)
+        } else {
+            $OpenStackBlockStorageProvider.ShowVolume($VolumeId, $Region, $Null)
         }
 
     }
