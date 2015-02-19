@@ -52,7 +52,7 @@ function Remove-OpenStackObjectStorageObject {
         [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required OpenStack Account with -Account parameter"),
         [Parameter (Mandatory=$True)] [string] $ContainerName= $(throw "Please specify required Container Name with the -ContainerName paramter"),
         [Parameter (Mandatory=$True)] [string] $ObjectName = $(throw "Please specify required object to be deleted with the -ObjectName parameter"),
-        [Parameter (Mandatory=$False)][array]  $Headers = @(),
+        [Parameter (Mandatory=$False)][array]  $Headers = $null,
         [Parameter (Mandatory=$False)][bool]   $DeleteSegments = $True,
         [Parameter (Mandatory=$False)][bool]   $UseInternalUrl = $False,
         [Parameter (Mandatory=$False)][string] $RegionOverride = $Null
