@@ -260,7 +260,6 @@ function New-OpenStackComputeServerImage {
 #CreateVirtualInterface
 #DeleteImage
 #DeleteImageMetadataItem
-#DeleteServer
 #DeleteVirtualInterface
 #DetachServerVolume
 #GetDetails
@@ -643,9 +642,7 @@ function Get-OpenStackComputeServerImage {
             Write-Debug -Message "ImageType........: $ImageType"
             Write-Debug -Message "Region...........: $Region"
 
-            if ($ImageId -ne $Null) {
-                return $OpenStackComputeServersProvider.GetImage($ImageId, $Region, $Null)
-            } else {
+            if ([string]::IsNullOrEmpty($ImageId)) {
                 if ($Details) {
                     $ImageList = $OpenStackComputeServersProvider.ListImagesWithDetails($Server, $ImageName, $ImageStatus, $ChangesSince, $MarkerId, $Limit, $ImageType, $Region, $Null)
                 } else {
@@ -660,6 +657,8 @@ function Get-OpenStackComputeServerImage {
                 elseif($ImageList.Count -ne 0){
         		    $ImageList;
                 }
+            } else {
+                return $OpenStackComputeServersProvider.GetImage($ImageId, $Region, $Null)
             }
         }
     catch {
@@ -799,6 +798,7 @@ function Get-OpenStackComputeServer {
                     }
                 } 
             } else {
+                    # When retrieving one and only one server, you always get ALL the details.
                     return $OpenStackComputeServersProvider.GetDetails($ServerId, $Region, $Null)
                 }
             }

@@ -1,7 +1,9 @@
 ﻿Clear
+Remove-Module PoshStack
+Import-Module PoshStack
 $Servername = Read-Host 'What is the name of the server you wish to create?'
 $Flavor = 'performance1-2'
-$Image = Get-OpenStackComputeServerImages -Account rackiad | WHERE {$_.Name -contains 'CentOS 6 (PV)'}
+$Image = Get-OpenStackComputeServerImage -Account rackiad | WHERE {$_.Name -contains 'CentOS 6 (PV)'}
 
 $meta = New-Object net.openstack.Core.Domain.Metadata
 $meta.Add("first","1")
