@@ -778,7 +778,8 @@ function Get-OpenStackComputeServer {
                 if ($Details) {
                     $ServerList = $OpenStackComputeServersProvider.ListServersWithDetails($ImageId, $FlavorId, $ServerName, $ServerState, $MarkerId, $Limit, $ChangesSince, $Region, $Null)
                 } else {
-                    $ServerList = $OpenStackComputeServersProvider.ListServers($ImageId, $FlavorId, $ServerName, $ServerState, $MarkerId, $Limit, $ChangesSince, $Region, $null)
+                    $ServerList = $OpenStackComputeServersProvider.ListServersWithDetails($ImageId, $FlavorId, $ServerName, $ServerState, $MarkerId, $Limit, $ChangesSince, $Region, $Null)
+                    #$ServerList = $OpenStackComputeServersProvider.ListServers($ImageId, $FlavorId, $ServerName, $ServerState, $MarkerId, $Limit, $ChangesSince, $Region, $null)
                 }
 
 
@@ -791,9 +792,9 @@ function Get-OpenStackComputeServer {
                     {
                         Add-Member -InputObject $server -MemberType NoteProperty -Name Region -Value $Region
                     }
-    		        $ServerList;
-                    } 
-                } else {
+    		        $ServerList | Select Name, Id, AccessIPV4, Region, VMState;
+                } 
+            } else {
                     return $OpenStackComputeServersProvider.GetDetails($ServerId, $Region, $Null)
                 }
             }
