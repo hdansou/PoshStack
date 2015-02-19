@@ -792,7 +792,11 @@ function Get-OpenStackComputeServer {
                     {
                         Add-Member -InputObject $server -MemberType NoteProperty -Name Region -Value $Region
                     }
-    		        $ServerList | Select Name, Id, AccessIPV4, Region, VMState;
+                    if ($Details) {
+        		        $ServerList 
+                    } else {
+        		        $ServerList | Select Name, Id, AccessIPV4, Region, VMState
+                    }
                 } 
             } else {
                     return $OpenStackComputeServersProvider.GetDetails($ServerId, $Region, $Null)
