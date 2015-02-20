@@ -799,6 +799,9 @@ function Get-OpenStackComputeServer {
                         $imageId = $server.Image.id
                         $imageName = Get-OpenStackComputeServerImage -Account $Account -RegionOverride $Region -ImageId $ImageId
                         Add-Member -InputObject $server -MemberType NoteProperty -Name ImageName -Value $imageName.Name
+                        $flavorId = $server.Flavor.Id
+                        $flavorName = Get-OpenStackComputeServerFlavor -Account $Account -RegionOverride $Region -FlavorId $flavorId
+                        Add-Member -InputObject $server -MemberType NoteProperty -Name FlavorName -Value $flavorName.Name
                     }
                     if ($Details) {
         		        $ServerList 
