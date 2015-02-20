@@ -20,6 +20,8 @@ Open a PowerShell prompt and run the following two lines:
 install-module PoshStack
 ```
 #### Configure
+##### Important Note: The CloudAccounts.csv file *must* be in the same directory as your PoshStack modules. THIS NEEDS TO BE CHANGED -- See Issue #257.
+
 Update the CloudAccounts.csv file with your cloud account credentials:  
   * _Type_ - Is this account targeting Rackspace, specifically, or another OpenStack provider? Valid entries are "Rackspace" or "OpenStack".
   * _AccountName_ - User-defined name for the account. This can be pretty much anything you desire, and it's only used in the context of PoshStack. For example, you may choose to name the accounts based on the default regions you assign to them. This _CloudName_ is **not** the same as your _CloudUsername_.
@@ -29,6 +31,11 @@ Update the CloudAccounts.csv file with your cloud account credentials:
   * _IdentityEndpointUri_ - This is the endpoint. It is required for OpenStack type accounts. It is not used for Rackspace type accounts.
   * _CloudDDI_ - This is your account number.
   * _Region_ - This is your default region. Hint: For DevStack, this is "RegionOne".
+
+You can see your cloud accounts configuration by running
+```bash
+Show-OpenStackAccounts
+```
 
 ##### An example of the contents of CloudAccounts.csv
 
