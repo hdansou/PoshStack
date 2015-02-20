@@ -598,6 +598,8 @@ function Get-OpenStackComputeServerFlavor {
 #ListImages
 #ListImagesWithDetails
 function Get-OpenStackComputeServerImage {
+
+    [CmdletBinding()]
     
     Param(
         [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required OpenStack Account with -account parameter"),
@@ -644,8 +646,10 @@ function Get-OpenStackComputeServerImage {
 
             if ([string]::IsNullOrEmpty($ImageId)) {
                 if ($Details) {
+                    Write-Verbose "Getting a detailed list of Server Images"
                     $ImageList = $OpenStackComputeServersProvider.ListImagesWithDetails($Server, $ImageName, $ImageStatus, $ChangesSince, $MarkerId, $Limit, $ImageType, $Region, $Null)
                 } else {
+                    Write-Verbose "Getting a simple list of Server Images"
                     $ImageList = $OpenStackComputeServersProvider.ListImages($Server, $ImageName, $ImageStatus, $ChangesSince, $MarkerId, $Limit, $ImageType, $Region, $Null)
                 }
 
@@ -659,8 +663,8 @@ function Get-OpenStackComputeServerImage {
                 }
             } else {
                 return $OpenStackComputeServersProvider.GetImage($ImageId, $Region, $Null)
-            }
         }
+    }
     catch {
         Invoke-Exception($_.Exception)
     }
@@ -772,13 +776,15 @@ function Get-OpenStackComputeServer {
             Write-Debug -Message "ChangesSince: $ChangesSince"
             Write-Debug -Message "Region......: $Region"
 
+
+
             if ([string]::IsNullOrEmpty($ServerId)) {
+
                 # Get the list of servers
                 if ($Details) {
                     $ServerList = $OpenStackComputeServersProvider.ListServersWithDetails($ImageId, $FlavorId, $ServerName, $ServerState, $MarkerId, $Limit, $ChangesSince, $Region, $Null)
                 } else {
                     $ServerList = $OpenStackComputeServersProvider.ListServersWithDetails($ImageId, $FlavorId, $ServerName, $ServerState, $MarkerId, $Limit, $ChangesSince, $Region, $Null)
-                    #$ServerList = $OpenStackComputeServersProvider.ListServers($ImageId, $FlavorId, $ServerName, $ServerState, $MarkerId, $Limit, $ChangesSince, $Region, $null)
                 }
 
 
@@ -790,6 +796,9 @@ function Get-OpenStackComputeServer {
                     foreach ($server in $ServerList)
                     {
                         Add-Member -InputObject $server -MemberType NoteProperty -Name Region -Value $Region
+                        $imageId = $server.Image.id
+                        $imageName = Get-OpenStackComputeServerImage -Account $Account -RegionOverride $Region -ImageId $ImageId
+                        Add-Member -InputObject $server -MemberType NoteProperty -Name ImageName -Value $imageName.Name
                     }
                     if ($Details) {
         		        $ServerList 
