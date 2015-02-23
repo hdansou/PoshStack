@@ -20,7 +20,7 @@ Open a PowerShell prompt and run the following two lines:
 install-module PoshStack
 ```
 #### Configure
-##### Important Note: The CloudAccounts.csv file *must* be in the same directory as your PoshStack modules. THIS NEEDS TO BE CHANGED -- See Issue #257.
+##### Important Note: The CloudAccounts.csv file location and name is specified in the user profile, using the variable "$openstackAccounts". See the included file profile.ps1 for an example
 
 Update the CloudAccounts.csv file with your cloud account credentials:  
   * _Type_ - Is this account targeting Rackspace, specifically, or another OpenStack provider? Valid entries are "Rackspace" or "OpenStack".

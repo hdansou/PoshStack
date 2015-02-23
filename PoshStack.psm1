@@ -13,7 +13,8 @@ Description
 ############################################################################################>
 
 # Cloud account configuration file
-$Global:PoshStackConfigFile = $env:USERPROFILE + "\Documents\WindowsPowerShell\Modules\PoshStack\CloudAccounts.csv" 
+#$Global:PoshStackConfigFile = $env:USERPROFILE + "\Documents\WindowsPowerShell\Modules\PoshStack\CloudAccounts.csv" 
+$Global:PoshStackConfigFile = $openstackAccounts 
 
 ############################################################################################
 #
