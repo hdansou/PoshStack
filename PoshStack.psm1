@@ -24,20 +24,20 @@ $Global:PoshStackConfigFile = $openstackAccounts
 #
 ############################################################################################
 
-function Get-OpenStackIdentityProvider {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory=$True)][string] $Username = $(throw "Please specify required Username with -Username parameter"),
-        [Parameter(Mandatory=$True)][string] $APIKey = $(throw "Please specify required API Key with -APIKey parameter")
-    )
-
-    # Get Identity Provider
-    $OpenStackId    = New-Object net.openstack.Core.Domain.CloudIdentity
-    $OpenStackId.Username = $Username
-    $OpenStackId.APIKey   = $APIKey
-    $cip = New-Object net.openstack.Providers.Rackspace.CloudIdentityProvider($OpenStackId)
-    Return $OpenStackId
-}
+#function Get-OpenStackIdentityProvider {
+#    [CmdletBinding()]
+#    param (
+#        [Parameter(Mandatory=$True)][string] $Username = $(throw "Please specify required Username with -Username parameter"),
+#        [Parameter(Mandatory=$True)][string] $APIKey = $(throw "Please specify required API Key with -APIKey parameter")
+#    )
+#
+#    # Get Identity Provider
+#    $OpenStackId    = New-Object net.openstack.Core.Domain.CloudIdentity
+#    $OpenStackId.Username = $Username
+#    $OpenStackId.APIKey   = $APIKey
+#    $cip = New-Object net.openstack.Providers.Rackspace.CloudIdentityProvider($OpenStackId)
+#    Return $OpenStackId
+#}
 
 function Get-OpenStackIdentityProviderOpenStack {
     [CmdletBinding()]

@@ -24,17 +24,49 @@ List Crendentials - these details are already in the $token variable
 - Reset User Api Key - Reset-OpenStackIdentityUserApi #### Unsupported - need to test further ####
 Revoke Token
 #>
+function Get-OpenStackIdentityProvider {
+    Param(
+        [Parameter (Mandatory=$True)] [string] $Account = $(throw "Please specify required Cloud Account with -Account parameter")
+        )
 
-function Get-OpenStackIdentityRoles {
+    # The Account comes from the file CloudAccounts.csv
+    # It has information regarding credentials and the type of provider (Generic or Rackspace)
+
+    Get-OpenStackAccount -Account $Account
+
+    # Is this Rackspace or Generic OpenStack?
+    switch ($Credentials.Type)
+    {
+        "Rackspace" {
+            # Get Identity Provider
+            $OpenStackId    = New-Object net.openstack.Core.Domain.CloudIdentity
+            $OpenStackId.Username = $Credentials.CloudUsername
+            $OpenStackId.APIKey   = $Credentials.CloudAPIKey
+            $Global:OpenStackId = New-Object net.openstack.Providers.Rackspace.CloudIdentityProvider($OpenStackId)
+#            Return New-Object net.openstack.Providers.Rackspace.CloudIdentityProvider($OpenStackId)
+Return $Global:OpenStackId
+        }
+        "OpenStack" {
+            $CloudIdentityWithProject = New-Object net.openstack.Core.Domain.CloudIdentityWithProject
+            $CloudIdentityWithProject.Password = $Credentials.CloudPassword
+            $CloudIdentityWithProject.Username = $Credentials.CloudUsername
+            $CloudIdentityWithProject.ProjectId = New-Object net.openstack.Core.Domain.ProjectId($Credentials.TenantId)
+            $CloudIdentityWithProject.ProjectName = $Credentials.TenantId
+            $Uri = New-Object System.Uri($Credentials.IdentityEndpointUri)
+            $OpenStackIdentityProvider = New-Object net.openstack.Core.Providers.OpenStackIdentityProvider($Uri, $CloudIdentityWithProject)
+            Return $OpenStackIdentityProvider
+        }
+    }
+
+}
+
+
+function Get-OpenStackIdentityRole {
     param (
         [Parameter(Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -Account parameter")
     )
 
     Get-AuthToken($account)
-
-    $URI = (Get-CloudURI("identity")) + "OS-KSADM/roles"
-
-    (Invoke-RestMethod -Uri $URI  -Headers $HeaderDictionary -ErrorAction Stop).roles | Select-Object id,name,RAX-AUTH:Weight,RAX-AUTH:propagate,description
 
 <#
  .SYNOPSIS
@@ -57,16 +89,12 @@ function Get-OpenStackIdentityRoles {
 #>
 }
 
-function Get-OpenStackIdentityTenants {
+function Get-OpenStackIdentityTenant {
     param (
         [Parameter(Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -Account parameter")
     )
 
     Get-AuthToken($account)
-
-    $URI = (Get-CloudURI("identity")) + "tenants"
-
-    (Invoke-RestMethod -Uri $URI  -Headers $HeaderDictionary -ErrorAction Stop).tenants
 
 <#
  .SYNOPSIS
@@ -95,28 +123,18 @@ function Get-OpenStackIdentityUser {
         [Parameter(Position=1,Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -Account parameter")
     )
 
-    Get-AuthToken($account)
-    
-    if ($UserID) {
-        $URI = (Get-CloudURI("identity")) + "users/$UserID"
-    }
-    elseif ($UserName) {
-        $URI = (Get-CloudURI("identity")) + "users?name=$UserName"
-    }
-    elseif ($UserEmail) {
-        $URI = (Get-CloudURI("identity")) + "users?email=$UserEmail"
-    }
-    else {
-        throw "You have to provide either UserID, UserName or UserEmail parameters"
+    $OpenStackIdentityProvider = Get-OpenStackIdentityProvider $Account
+
+    if (-Not [string]::IsNullOrEmpty($UserID)) {
+        $OpenStackIdentityProvider.GetUser($UserID, $null)
     }
 
-    $result = (Invoke-RestMethod -Uri $URI -Headers $HeaderDictionary -ErrorAction Stop)
-
-    if ($UserID -or $UserName) {
-        return $result.user
+    if (-Not [string]::IsNullOrEmpty($UserEmail)) {
+        $OpenStackIdentityProvider.GetUsersByEmail($UserEmail, $null)
     }
-    else {
-        return $result.users
+
+    if (-Not [string]::IsNullOrEmpty($UserName)) {
+        $OpenStackIdentityProvider.GetUserByName($UserName, $null)
     }
 
 <#
@@ -158,18 +176,13 @@ function Get-OpenStackIdentityUser {
 #>
 }
 
-function Get-OpenStackIdentityUserRoles {
+function Get-OpenStackIdentityUserRole {
     param (
         [Parameter(Position=0,Mandatory=$True)][string] $UserID = $(throw "Specify the user ID with -UserID"),
         [Parameter(Position=1,Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -Account parameter")
     )
 
     Get-AuthToken($account)
-
-    $URI = (Get-CloudURI("identity")) + "users/$UserID/roles"
-
-    (Invoke-RestMethod -Uri $URI  -Headers $HeaderDictionary -ErrorAction Stop).roles | Select-Object name,id,description
-
 <#
  .SYNOPSIS
  Get a list roles which a specific user is asigned.
@@ -200,17 +213,8 @@ function Reset-OpenStackIdentityUserApi {
         [Parameter(Position=1,Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -Account parameter")
     )
     
-    #######
-    ####### This cmdlet does not work at this time
-    #######
-
-    Show-UntestedWarning
-
     Get-AuthToken($account)
 
-    $URI = (Get-CloudURI("identity")) + "users/$UserID/OS-KSADM/credentials/RAX-KSKEY:apiKeyCredentials/RAX-AUTH/reset"
-
-    Invoke-RestMethod -Uri $URI -Headers $HeaderDictionary -Method Post -ErrorAction Stop
 }
 
 function New-OpenStackIdentityUser {
@@ -223,24 +227,6 @@ function New-OpenStackIdentityUser {
     )
 
     Get-AuthToken($account)
-
-    $URI = (Get-CloudURI("identity")) + "users"
-
-    $object = New-Object -TypeName PSCustomObject -Property @{
-        "user"=New-Object -TypeName PSCustomObject -Property @{
-            "username"=$UserName;
-            "email"=$UserEmail;
-            "enabled"=(!$Disabled)
-        }
-    }
-
-    if ($UserPass){
-        Add-Member -InputObject $object.user -NotePropertyName "OS-KSADM:password" -NotePropertyValue $UserPass
-    }
-
-    $JSONbody = $object | ConvertTo-Json
-
-    (Invoke-RestMethod -Uri $URI -Headers $HeaderDictionary -Body $JSONbody -ContentType application/json -Method Post -ErrorAction Stop).user
 
 <#
  .SYNOPSIS
@@ -284,11 +270,6 @@ function Remove-OpenStackIdentityUser {
 
     Get-AuthToken($account)
 
-    $URI = (Get-CloudURI("identity")) + "users/$UserID"
-
-    #Invoke-RestMethod -Uri $URI -Headers $HeaderDictionary -Method Delete -ErrorAction Stop
-    $r = (Invoke-WebRequest -Uri $URI -Method DELETE -Headers $HeaderDictionary)
-
 }
 
 function Edit-OpenStackIdentityUser {
@@ -301,46 +282,6 @@ function Edit-OpenStackIdentityUser {
         [Parameter(Position=5,Mandatory=$False)] [ValidateSet("LON","DFW","ORD","IAD","HKG","SYD")] [string] $UserRegion,
         [Parameter(Position=6,Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -Account parameter")
     )
-
-    Get-AuthToken($account)
-    $URI = (Get-CloudURI("identity")) + "users/$UserID"
-
-    $object = New-Object -TypeName PSCustomObject -Property @{
-        "user"=New-Object -TypeName PSCustomObject -Property @{
-        }
-    }
-
-    if ($UserName -or $UserEmail -or $UserPass -or $Disabled -or $UserRegion){
-        if ($UserName){
-            Add-Member -InputObject $object.user -NotePropertyName "username" -NotePropertyValue $UserName
-        }
-        if ($UserEmail){
-            Add-Member -InputObject $object.user -NotePropertyName "email" -NotePropertyValue $UserEmail
-        }
-        if ($UserPass){
-            Add-Member -InputObject $object.user -NotePropertyName "OS-KSADM:password" -NotePropertyValue $UserPass
-        }
-        if ($Disabled){
-            switch ($Disabled) {
-                True {
-                    Add-Member -InputObject $object.user -NotePropertyName "enabled" -NotePropertyValue "false"
-                }
-                False {
-                    Add-Member -InputObject $object.user -NotePropertyName "enabled" -NotePropertyValue "true"
-                }
-            }
-        }
-        if ($UserRegion){
-            Add-Member -InputObject $object.user -NotePropertyName "RAX-AUTH:defaultRegion" -NotePropertyValue $UserRegion
-        }
-    }
-    else {
-        throw "Please provide the user property you wish to modify!"
-    }
-
-    $JSONbody = $object | ConvertTo-Json
-
-    (Invoke-RestMethod -Uri $URI -Headers $HeaderDictionary -Body $JSONbody -ContentType application/json -Method Post -ErrorAction Stop).user
 
 <#
  .SYNOPSIS
@@ -385,12 +326,6 @@ function Add-OpenStackIdentityRoleForUser {
         [Parameter(Position=2,Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -Account")
     )
 
-    Get-AuthToken($account)
-    $URI = (Get-CloudURI("identity")) + "users/$UserID/roles/OS-KSADM/$RoleID"
-
-
-    Invoke-RestMethod -Uri $URI -Headers $HeaderDictionary -Method Put -ErrorAction Stop
-
 <#
  .SYNOPSIS
  Add role membership for a cloud user.
@@ -423,12 +358,6 @@ function Remove-OpenStackIdentityRoleForUser {
         [Parameter(Position=1,Mandatory=$True)][string] $RoleID = $(throw "Specify the role ID with -RoleID"),
         [Parameter(Position=2,Mandatory=$True)][string] $Account = $(throw "Please specify required Cloud Account with -Account")
     )
-
-    Get-AuthToken($account)
-    $URI = (Get-CloudURI("identity")) + "users/$UserID/roles/OS-KSADM/$RoleID"
-
-
-    Invoke-RestMethod -Uri $URI -Headers $HeaderDictionary -Method Delete -ErrorAction Stop
 
 <#
  .SYNOPSIS
