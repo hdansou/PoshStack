@@ -16,7 +16,7 @@ Installation requires two steps: Install and Configure. PoshStack is installed u
 #### Install
 Open a PowerShell prompt and run the following two lines:
 ```bash
-(new-object Net.WebClient).DownloadString("http://psget.net/GetPsGet.ps1") | iex
+(new-object Net.WebClient).DownloadString("http://psget.net/GetPsGet.ps1") | Invoke-Expression
 install-module PoshStack
 ```
 #### Configure
