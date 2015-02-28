@@ -38,12 +38,13 @@ Show-OpenStackAccounts
 ```
 
 ##### An example of the contents of CloudAccounts.csv
-
+```
 Type,AccountName,CloudUsername,CloudPassword,CloudAPIKey,IdentityEndpointUri,Region,TenantId
 Rackspace,rackIAD,username_here,password_here,apikey_here,foo,IAD,123456
 Rackspace,rackDFW,username_here,password_here,apikey_here,foo,dfw,123456
 Rackspace,rackORD,username_here,password_here,apikey_here,foo,ord,123456
 OpenStack,devstack,username_here,password_here,foo,http://99.99.99.99:5000/v2.0/tokens/,RegionOne,username_here
+```
 
 ## Contributing is a cinch as well...
 Make your contribution to the goodness. Fork the code, pick an issue, and get coding. If you're unsure where to start or what it all means, choose an issue and leave a comment, asking for assistance.
